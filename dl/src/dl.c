@@ -122,7 +122,7 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		int goon = ParseSwitches(cliline);
 		//bprintf("got out..,\n");bflush();
 
-
+		//this will be new
 		if (goon != -1) {
 			cliline = &cliline[goon];
 			arg = strtok(cliline, " ");
