@@ -47,6 +47,7 @@ void bzero(char *dest, int n)
 		*dest++ = 0;
 }
 
+/*
 int strlen(const char *str)
 {
 	int ret = 0;
@@ -54,6 +55,13 @@ int strlen(const char *str)
 		++ret;
 	return ret;
 }
+*/
+int strlen(const char *string)
+{ const char *s=string;
+
+  do;while(*s++); return ~(string-s);
+}
+
 
 char *strtok(char *s, const char *delim)
 {
