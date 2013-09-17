@@ -48,6 +48,22 @@ static size_t cwd_n_alloc;
 /* Index of first unused slot in 'cwd_file'.  */
 size_t cwd_n_used;
 
+/* If true, the file listing format requires that stat be called on
+ each file.  */
+bool format_needs_stat;
+/* Similar to 'format_needs_stat', but set if only the file type is
+ needed.  */
+bool format_needs_type;
+
+enum sort_type sort_type;
+enum format format;
+bool print_block_size;
+bool recursive;
+bool print_with_color;
+enum indicator_style indicator_style;
+bool directories_first;
+enum Dereference_symlink dereference;
+
 /* these are basically related to fib_DirEntryType after being
  remaped by RemapDirEntryType (). */
 struct highlight highlight_tabx[13] = {
@@ -124,9 +140,9 @@ void free_structures(void)
 	if (sorted_file)
 		myfree((char * ) sorted_file);
 	if (column_info)
-		myfree((char *)column_info);
+		myfree((char * )column_info);
 	if (p)
-		myfree((char *)p);
+		myfree((char * )p);
 	free_pending_ent(pending_dirs);
 	cwd_file = sorted_file = column_info = p = pending_dirs = 0;
 }
@@ -239,7 +255,7 @@ void free_pending_ent(struct pending *pend)
 		myfree(pend->name);
 	if (pend->realname)
 		myfree(pend->realname);
-	myfree((char *)pend);
+	myfree((char * )pend);
 }
 
 extern int gotBreak;
@@ -675,6 +691,126 @@ static void print_horizontal(void)
 	}
 	bprintf("\n");
 	TestBreak();
+}
+
+void attach(char *dest, const char *dirname, const char *name)
+{
+	const char *dirnamep = dirname;
+
+	/* Copy dirname if it is not ""   */
+	if (dirname[0] != '\0') {
+		while (*dirnamep)
+			*dest++ = *dirnamep++;
+		/* Add '/' if 'dirname' doesn't already end with it.  */
+		if (dirnamep > dirname && (dirnamep[-1] != '/' && dirnamep[-1] != ':'))
+			*dest++ = '/';
+	}
+	while (*name)
+		*dest++ = *name++;
+	*dest = 0;
+}
+
+int stat(char *file, struct fileinfo *f)
+{
+	BPTR lock = 0L;
+	int ret;
+
+	if ((lock = Lock(file,SHARED_LOCK))) {
+		if ((Examine(lock, &f->fib))) {
+			ret = 0;
+		} else {
+			myerror("Oopps, examine failed on %s ", file);
+			ret = -1;
+		}
+		UnLock(lock);
+	} else
+		ret = -1;
+	errno = IoErr();
+	return ret;
+}
+
+uintmax_t gobble_file(char const *name, enum filetype type, long inode,
+		bool command_line_arg, char const *dirname)
+{
+	uintmax_t blocks = 0;
+	struct fileinfo *f;
+
+	if (cwd_n_used == cwd_n_alloc) {
+		cwd_file = realloc(cwd_file, cwd_n_alloc * 2 * sizeof *cwd_file);
+		cwd_n_alloc *= 2;
+	}
+
+	f = &cwd_file[cwd_n_used];
+	memset(f, '\0', sizeof *f);
+	f->fib.fib_DiskKey = inode;
+	f->fib.fib_DirEntryType = type;
+	if (command_line_arg || format_needs_stat) {
+		/* Absolute name of this file.  */
+		char *absolute_name;
+		bool do_deref;
+		int err;
+
+		if (name[0] == '/' || dirname[0] == 0)
+			absolute_name = (char *) name;
+		else {
+			absolute_name = mymalloc(strlen(name) + strlen(dirname) + 2);
+			attach(absolute_name, dirname, name);
+		}
+		switch (dereference) {
+		case DEREF_ALWAYS:
+			err = stat(absolute_name, f);
+			do_deref = true;
+			break;
+
+		case DEREF_COMMAND_LINE_ARGUMENTS:
+		case DEREF_COMMAND_LINE_SYMLINK_TO_DIR:
+			if (command_line_arg) {
+				bool need_lstat;
+				err = stat(absolute_name, f);
+				do_deref = true;
+
+				if (dereference == DEREF_COMMAND_LINE_ARGUMENTS)
+					break;
+
+				need_lstat = 0;//(err < 0 ? errno == ENOENT : !S_ISDIR(f->stat.st_mode));
+				myerror("Fix me\n sort.c");
+				if (!need_lstat)
+					break;
+
+				/* stat failed because of ENOENT, maybe indicating a dangling
+				 symlink.  Or stat succeeded, ABSOLUTE_NAME does not refer to a
+				 directory, and --dereference-command-line-symlink-to-dir is
+				 in effect.  Fall through so that we call lstat instead.  */
+			}
+
+		default: /* DEREF_NEVER */
+			err = stat(absolute_name, f);
+			do_deref = false;
+			break;
+		}
+
+
+	if (err != 0)
+	        {
+	          /* Failure to stat a command line argument leads to
+	             an exit status of 2.  For other files, stat failure
+	             provokes an exit status of 1.  */
+	          file_failure (command_line_arg,
+	                        _("cannot access %s"), absolute_name);
+	          if (command_line_arg) {
+	        	  myfree(absolute_name);
+	        	  return 0;
+	          }
+
+
+	          f->name = xstrdup (name);
+	          cwd_n_used++;
+	          myfree(absolute_name);
+	          return 0;
+	        }
+
+	myfree(absolute_name);
+	}
 }
 
 //

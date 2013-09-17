@@ -59,11 +59,9 @@
 
 /* Identification */
 
-static const char	id[] =
-    "@(#)lib/fpattern.c 1.08";
+//static const char	id[] =  "@(#)lib/fpattern.c 1.08";
 
-static const char	copyright[] =
-    "Copyright ©1997-1998 David R. Tribble\n";
+//static const char	copyright[] =  "Copyright ©1997-1998 David R. Tribble\n";
 
 
 /* System includes */

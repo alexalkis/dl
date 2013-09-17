@@ -41,6 +41,12 @@ void bcopy(char *src, char *dest, int n)
 		*dest++ = *src++;
 }
 
+void bzero(char *dest, int n)
+{
+	while (n--)
+		*dest++ = 0;
+}
+
 int strlen(const char *str)
 {
 	int ret = 0;

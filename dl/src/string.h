@@ -28,6 +28,7 @@ void bflush(void);
 
 int strlen(const char *str);
 void bcopy(char *src, char *dest, int n);
+void bzero(char *dest, int n);
 char *strtok(char *s, const char *delim);
 int myindex(char *str, char c);
 int strcmp(char *str1, char *str2);

@@ -48,9 +48,6 @@ void showTotals(void);
 void Dir(char *filedir);
 void displayFib(struct FileInfoBlock *fib);
 
-int StartsWith(char *pattern, char *text, int pos);
-int EndsWith(char *pattern, char *text);
-int match(char *pattern, char *text);
 int ContainsWildchar(char *text);
 char *getDirectory(char *text);
 void TestBreak(void);
@@ -80,12 +77,23 @@ int gReverse = 0;
 int gDisplayMode = DISPLAY_NORMAL;
 int gTimeDateFormat = TIMEDATE_NORMAL;
 int gSize = SIZE_NORMAL;
-int gRecursvie = FALSE;
+extern bool recursive;
 static bool immediate_dirs = 0;
 bool print_dir_name;
+LONG errno;
 
+/* If true, the file listing format requires that stat be called on each file.  */
+extern bool format_needs_stat;
+/* Similar to 'format_needs_stat', but set if only the file type is needed.  */
+extern bool format_needs_type;
+extern bool print_block_size;
+extern bool print_with_color;
 extern size_t cwd_n_used;
 extern size_t max_idx;
+extern enum indicator_style indicator_style;
+extern bool directories_first;
+extern enum Dereference_symlink dereference;
+
 struct pending *pending_dirs;
 size_t tabsize = 8;
 extern struct highlight highlight_tabx13[13], *highlight_tab;
@@ -107,7 +115,8 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		max_idx = MAX (1, windowWidth / 3); //MIN_COLUMN_WIDTH);
 		OSVersion = (SysBase->LibNode.lib_Version > 34) ? 20 : 13;
 		struct Process *procp = (struct Process *) FindTask (0L);
-		StdErr=((struct CommandLineInterface *)BADDR(procp->pr_CLI)) ->cli_StandardOutput;
+		StdErr =
+				((struct CommandLineInterface *) BADDR(procp->pr_CLI))->cli_StandardOutput;
 		//struct CommandLineInterface *cli=((struct CommandLineInterface *)BADDR(procp->pr_CLI));
 //		myprintf("Commandname: %b\n",cli->cli_CommandName);
 //		myprintf("SetName: %b\n",cli->cli_SetName);
@@ -122,6 +131,17 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		int goon = ParseSwitches(cliline);
 		//bprintf("got out..,\n");bflush();
 
+		format_needs_stat = sort_type == sort_time || sort_type == sort_size
+				|| format == long_format || print_block_size;
+		format_needs_type = (!format_needs_stat
+				&& (recursive || print_with_color || indicator_style != none
+						|| directories_first));
+		if (dereference == DEREF_UNDEFINED)
+			dereference = (
+					(immediate_dirs || indicator_style == classify
+							|| format == long_format) ?
+							DEREF_NEVER : DEREF_COMMAND_LINE_SYMLINK_TO_DIR);
+
 		//this will be new
 		if (goon != -1) {
 			cliline = &cliline[goon];
@@ -134,56 +154,48 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 						if (!immediate_dirs)
 							extract_dirs_from_files(arg, true);
 						/* 'cwd_n_used' might be zero now.  */
-						if (cwd_n_used)
-						    {
-						      print_current_files ();
-						      if (pending_dirs)
-						        bprintf("\n");
-						    }
+						if (cwd_n_used) {
+							print_current_files();
+							if (pending_dirs)
+								bprintf("\n");
+						}
 						struct pending *thispend;
-						while (pending_dirs)
-						    {
+						while (pending_dirs) {
 
-						      thispend = pending_dirs;
-						      pending_dirs = pending_dirs->next;
+							thispend = pending_dirs;
+							pending_dirs = pending_dirs->next;
 
-						      //if (LOOP_DETECT)
-						        //{
-						          if (thispend->name == NULL)
-						            {
-						              /* thispend->name == NULL means this is a marker entry
-						                 indicating we've finished processing the directory.
-						                 Use its dev/ino numbers to remove the corresponding
-						                 entry from the active_dir_set hash table.  */
-						              //struct dev_ino di = dev_ino_pop ();
-						              //struct dev_ino *found = hash_delete (active_dir_set, &di);
-						              /* ASSERT_MATCHING_DEV_INO (thispend->realname, di); */
-						              //assert (found);
-						              //dev_ino_free (found);
-						        	  //bprintf("free..\n");
-						              free_pending_ent (thispend);
-						              continue;
-						            }
-						        //}
-						      //myprintf("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
-						      clear_files();
+							//if (LOOP_DETECT)
+							//{
+							if (thispend->name == NULL) {
+								/* thispend->name == NULL means this is a marker entry
+								 indicating we've finished processing the directory.
+								 Use its dev/ino numbers to remove the corresponding
+								 entry from the active_dir_set hash table.  */
+								//struct dev_ino di = dev_ino_pop ();
+								//struct dev_ino *found = hash_delete (active_dir_set, &di);
+								/* ASSERT_MATCHING_DEV_INO (thispend->realname, di); */
+								//assert (found);
+								//dev_ino_free (found);
+								//bprintf("free..\n");
+								free_pending_ent(thispend);
+								continue;
+							}
+							//}
+							//myprintf("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
+							clear_files();
 
-						      Dir(thispend->name);
-						      /* Sort the directory contents.  */
-						      sort_files ();
-						      //bprintf("cwd_n_used = %ld\n",cwd_n_used);
-						      if (cwd_n_used)
-						          print_current_files ();
-						      //print_dir (thispend->name, thispend->realname,thispend->command_line_arg);
+							Dir(thispend->name);
+							/* Sort the directory contents.  */
+							sort_files();
+							//bprintf("cwd_n_used = %ld\n",cwd_n_used);
+							if (cwd_n_used)
+								print_current_files();
+							//print_dir (thispend->name, thispend->realname,thispend->command_line_arg);
 
-
-						      free_pending_ent (thispend);
-						      print_dir_name = true;
-						    }
-
-
-
-
+							free_pending_ent(thispend);
+							print_dir_name = true;
+						}
 
 						clear_files();
 					}
@@ -276,7 +288,7 @@ int ParseSwitches(char *filedir)
 				}
 				++f;
 			}
-			filedir=f;
+			filedir = f;
 		} else {
 			//bprintf("final in parse: %s (%ld)\n", filedir, filedir - save);
 			return filedir - save;
@@ -313,10 +325,11 @@ void Dir(char *filedir)
 	if (Examine(lock, &fib)) {
 
 		if (fib.fib_DirEntryType <= 0) {
-			strcpy(fib.fib_FileName,dir);
+			strcpy(fib.fib_FileName, dir);
 			addEntry(&fib);
 		} else {
-			if (strlen(filedir)) bprintf("%s:\n",filedir);
+			if (strlen(filedir))
+				bprintf("%s:\n", filedir);
 			//myprintf("Directory of %s (%s):\n", fib.fib_FileName, dir);
 			while (ExNext(lock, &fib) && !gotBreak) {
 				TestBreak();
@@ -406,7 +419,6 @@ void myPutStr(char *str)
 	int len = strlen(str);
 	Write(Output(), str, len);
 }
-
 
 char *dates(char *s, struct DateStamp *dss)
 {

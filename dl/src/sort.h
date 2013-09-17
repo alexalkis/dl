@@ -14,6 +14,8 @@
 
 typedef short int bool;
 typedef int size_t;
+typedef unsigned long long uintmax_t;
+
 
 #define MIN(a,b)	((a>b)?b:a)
 #define MAX(a,b)	((a>b)?a:b)
@@ -28,6 +30,60 @@ extern int gDisplayMode;
 enum SORTING {
 	SORT_NONE = 0, SORT_FILENAME,SORT_FILENAME_EXTENSION, SORT_SIZE, SORT_DATE
 };
+
+enum filetype
+  {
+    unknown,
+    fifo,
+    chardev,
+    directory,
+    blockdev,
+    normal,
+    symbolic_link,
+    sock,
+    whiteout,
+    arg_directory
+  };
+
+enum Dereference_symlink
+  {
+    DEREF_UNDEFINED = 1,
+    DEREF_NEVER,
+    DEREF_COMMAND_LINE_ARGUMENTS,	/* -H */
+    DEREF_COMMAND_LINE_SYMLINK_TO_DIR,	/* the default, in certain cases */
+    DEREF_ALWAYS			/* -L */
+  };
+
+enum sort_type
+  {
+    sort_none = -1,		/* -U */
+    sort_name,			/* default */
+    sort_extension,		/* -X */
+    sort_size,			/* -S */
+    sort_version,		/* -v */
+    sort_time,			/* -t */
+    sort_numtypes		/* the number of elements of this enum */
+  };
+
+enum format
+  {
+    long_format,		/* -l and other options that imply -l */
+    one_per_line,		/* -1 */
+    many_per_line,		/* -C */
+    horizontal,			/* -x */
+    with_commas			/* -m */
+  };
+enum indicator_style
+  {
+    none,	/*     --indicator-style=none */
+    slash,	/* -p, --indicator-style=slash */
+    file_type,	/*     --indicator-style=file-type */
+    classify	/* -F, --indicator-style=classify */
+  };
+
+extern enum format format;
+extern enum sort_type sort_type;
+extern LONG errno;
 
 struct fileinfo {
 	struct FileInfoBlock fib;
