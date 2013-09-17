@@ -803,7 +803,7 @@ uintmax_t gobble_file(char const *name, enum filetype type, long inode,
 	          }
 
 
-	          f->name = xstrdup (name);
+	          // FIXME: f->name = xstrdup (name);
 	          cwd_n_used++;
 	          myfree(absolute_name);
 	          return 0;
