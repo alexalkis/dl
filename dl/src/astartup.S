@@ -4,14 +4,21 @@
   .globl  _mysprintf
   .globl  _myprintf
 mystart:
-  jmp _hello
+  			jsr 	_hello
+  			movel	d0,d2
+  			jsr		_bflush
+  			movel	d2,d0
+  			rts
 
-_LVOAllocMem = -0xc6
-_LVOFreeMem  = -0xd2
-_LVORawDoFmt = -522
-_LVOOutput = -0x3c
-_LVOWrite = -0x30
-_LVOSetSignal = - 0x132
+FLUSHONCR 	= 0		| 1--Flush stdout if last char is '\n', 0--Disable
+CHECKCTRLC 	= 0		| 1--Enable ctrl-c check on bflush, 0--Disable
+
+_LVOAllocMem 	=  -0xc6
+_LVOFreeMem  	=  -0xd2
+_LVORawDoFmt 	=   -522
+_LVOOutput 		=  -0x3c
+_LVOWrite 		=  -0x30
+_LVOSetSignal 	= -0x132
 
 _mysprintf:
             moveml a2-a3/a6,-(sp)
@@ -73,6 +80,10 @@ str:    	moveb	(a3)+,d1
 			move.l	d0,_i
 			cmpl	#4096,d0	| can kill the system with a big write >256bytes
 			jle		keep		| string, but I trust you.
+			.ifgt	FLUSHONCR
+			cmp.b	#'\n',d1
+			bne		keep
+			.endif
 			bsr		_bflush
 keep:		lea	    256(sp),sp	| deallocate buffer
             movem.l (sp)+,a2/a3/a6
@@ -85,7 +96,7 @@ keep:		lea	    256(sp),sp	| deallocate buffer
 			.globl  _bflush
 _bflush:	moveml	d2-d3/a6,-(sp)
 			move.l	_i,d3			| if len is zero nothing to flush
-			beq		scheck			| just check for ctrl-c
+			beq		.len0			| just check for ctrl-c
 			lea		_buffer,a0
 			move.l	a0,d2
 			move.l	_DOSBase,a6
@@ -93,12 +104,15 @@ _bflush:	moveml	d2-d3/a6,-(sp)
 			move.l	d0,d1
 			jsr		_LVOWrite(a6)
 			clrl 	_i
+.len0:
+			.ifgt	CHECKCTRLC
 scheck:		move.l	_SysBase,a6
 			moveql	#0,d0
 			move.l	#12,d1				|#define SIGBREAKB_CTRL_C   12
 			jsr		_LVOSetSignal(a6)
 			and.l	#1<<12,d0
 			move.l	d0,_gotBreak
+			.endif
 			moveml	(sp)+,d2-d3/a6
 			rts
 
@@ -117,6 +131,10 @@ _bputchar:
 .putcok:	rts
 
 
+/* Note that this is unbuffered.
+** If you need it buffered, use another buffer.  You shouldn't mix with the
+** stdout's buffer.
+*/
 		.text
         .proc
         .globl  _myerror

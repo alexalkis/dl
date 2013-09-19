@@ -795,8 +795,8 @@ uintmax_t gobble_file(char const *name, enum filetype type, long inode,
 	          /* Failure to stat a command line argument leads to
 	             an exit status of 2.  For other files, stat failure
 	             provokes an exit status of 1.  */
-	          file_failure (command_line_arg,
-	                        _("cannot access %s"), absolute_name);
+	          //file_failure (command_line_arg,_("cannot access %s"), absolute_name);
+	          myerror("cannot access %s",absolute_name);
 	          if (command_line_arg) {
 	        	  myfree(absolute_name);
 	        	  return 0;
