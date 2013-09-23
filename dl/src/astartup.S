@@ -13,6 +13,8 @@ mystart:
 FLUSHONCR 	= 0		| 1--Flush stdout if last char is '\n', 0--Disable
 CHECKCTRLC 	= 0		| 1--Enable ctrl-c check on bflush, 0--Disable
 
+BUFFERSIZE	= 4096
+
 _LVOAllocMem 	=  -0xc6
 _LVOFreeMem  	=  -0xd2
 _LVORawDoFmt 	=   -522
@@ -78,17 +80,17 @@ str:    	moveb	(a3)+,d1
 	    	bne.s	str
 			subq.l	#1,d0		| compensate for \0
 			move.l	d0,_i
-			cmpl	#4096,d0	| can kill the system with a big write >256bytes
+			cmpl	#BUFFERSIZE,d0	| can kill the system with a big write >256bytes
 			jle		keep		| string, but I trust you.
 			.ifgt	FLUSHONCR
-			cmp.b	#'\n',d1
+			cmp.b	#'\n',d1	| if last char was \n flush the buffer
 			bne		keep
 			.endif
 			bsr		_bflush
 keep:		lea	    256(sp),sp	| deallocate buffer
             movem.l (sp)+,a2/a3/a6
             rts
-.lcomm _buffer,4096+256
+.lcomm _buffer,BUFFERSIZE+256
 
 |returnedLength =  Write( file, buffer, length )
 |    D0                       D1    D2      D3
@@ -125,7 +127,7 @@ _bputchar:
 			moveb	7(sp),(a0,d0:l)
 			addql	#1,d0
 			move.l	d0,_i
-			cmpl	#4096,d0
+			cmpl	#BUFFERSIZE,d0
 			jle		.putcok
 			bsr		_bflush
 .putcok:	rts

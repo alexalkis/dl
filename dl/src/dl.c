@@ -56,8 +56,8 @@ int ParseSwitches(char *filedir);
 #define VERSION_STRING "1.0"
 BYTE version[] = "\0$VER: dl " VERSION_STRING " (" __DATE__ ")";
 
-/* CON: command sequence for window bounds report */
-BYTE gwbrstr[] = "\x9b" "0 q";
+
+
 
 struct DosLibrary *DOSBase;
 struct ExecBase *SysBase;

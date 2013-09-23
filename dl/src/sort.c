@@ -457,6 +457,7 @@ int cmp(struct FileInfoBlock *fib1, struct FileInfoBlock *fib2)
 /* Well shell sort cause:
  * A) It's small and pretty
  * B) You'll never encounter directories with so many entries that quicksort will be faster
+ *    (hopefully :P)
  */
 void shellSort(struct fileinfo **a, int n)
 {

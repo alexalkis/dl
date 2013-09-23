@@ -372,3 +372,6 @@ dpnoname:
 	movem.l	(sp)+,a5/a6
 	rts
 
+/* CON: command sequence for window bounds report */
+_gwbrstr:
+	.byte 0x9b,'0',' ','q',0
