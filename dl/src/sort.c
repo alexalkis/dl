@@ -5,6 +5,7 @@
  *      Author: alex
  */
 #include "sort.h"
+#include "human.h"
 #include "string.h"
 
 /*
@@ -58,8 +59,17 @@ bool format_needs_type;
 enum sort_type sort_type;
 enum format format;
 bool print_block_size;
+bool print_inode;
 bool recursive;
 bool print_with_color;
+int inode_number_width;
+int block_size_width;
+int file_size_width;
+int human_output_opts;
+uintmax_t output_block_size;
+int file_human_output_opts;
+uintmax_t file_output_block_size = 1;
+
 enum indicator_style indicator_style;
 bool directories_first;
 enum Dereference_symlink dereference;
@@ -132,6 +142,9 @@ void clear_files(void)
 		free_ent(f);
 	}
 	cwd_n_used = 0;
+	inode_number_width = 0;
+	block_size_width = 0;
+	file_size_width = 0;
 }
 void free_structures(void)
 {
@@ -144,7 +157,7 @@ void free_structures(void)
 	if (p)
 		myfree((char * )p);
 	free_pending_ent(pending_dirs);
-	cwd_file = sorted_file = column_info = p = pending_dirs = 0;
+	cwd_file = sorted_file = column_info = p = pending_dirs = NULL;
 }
 
 void initialize_ordering_vector(void)
@@ -204,8 +217,10 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 
 		if (f->fib.fib_EntryType > 0) // (is_directory (f))
 				{
-			if (!dirname)
+			if (!dirname) {
+
 				queue_directory(f->fib.fib_FileName, 0, command_line_arg);
+			}
 			else {
 				//bprintf("--> %s  %s\n", dirname,f->fib.fib_FileName);
 				char *name = file_name_concat(dirname, f->fib.fib_FileName,
@@ -371,7 +386,7 @@ int cmp(struct FileInfoBlock *fib1, struct FileInfoBlock *fib2)
 		break;
 	}
 	if (gReverse)
-		ret *= -1;
+		ret = -ret;
 	return ret;
 }
 
@@ -597,6 +612,45 @@ size_t calculate_columns(bool by_columns)
 	return cols;
 }
 
+char *umaxtostr(LONG num,char *buf)
+{
+	mysprintf(buf,"%ld",num);
+	return buf;
+}
+size_t length_of_file_name_and_frills (const struct fileinfo *f)
+{
+  size_t len = 0;
+  size_t name_width;
+  char buf[LONGEST_HUMAN_READABLE + 1];
+
+  if (print_inode)
+    len += 1 + (format == with_commas
+                ? strlen (umaxtostr (f->fib.fib_DiskKey, buf))
+                : inode_number_width);
+
+  if (print_block_size)
+    len += 1 + (format == with_commas
+                ? strlen (human_readable (ST_NBLOCKS (f->fib.fib_NumBlocks), buf,
+                                            human_output_opts, ST_NBLOCKSIZE,
+                                            output_block_size))
+                : block_size_width);
+
+//  if (print_scontext)
+//    len += 1 + (format == with_commas ? strlen (f->scontext) : scontext_width);
+
+  //quote_name (NULL, f->fib.fib_FileName, filename_quoting_options, &name_width);
+  name_width=strlen(f->fib.fib_FileName);
+  len += name_width;
+
+  if (indicator_style != none)
+    {
+      char c = get_type_indicator (f->stat_ok, f->stat.st_mode, f->filetype);
+      len += (c != 0);
+    }
+
+  return len;
+}
+
 static void init_column_info(void)
 {
 	size_t i;
@@ -747,14 +801,14 @@ uintmax_t gobble_file(char const *name, enum filetype type, long inode,
 	f->fib.fib_DirEntryType = type;
 	if (command_line_arg || format_needs_stat) {
 		/* Absolute name of this file.  */
-		char *absolute_name;
+		char *absolute_name, *ff=NULL;
 		bool do_deref;
 		int err;
 
 		if (name[0] == '/' || dirname[0] == 0)
 			absolute_name = (char *) name;
 		else {
-			absolute_name = mymalloc(strlen(name) + strlen(dirname) + 2);
+			ff=absolute_name = mymalloc(strlen(name) + strlen(dirname) + 2);
 			attach(absolute_name, dirname, name);
 		}
 		switch (dereference) {
@@ -773,7 +827,7 @@ uintmax_t gobble_file(char const *name, enum filetype type, long inode,
 				if (dereference == DEREF_COMMAND_LINE_ARGUMENTS)
 					break;
 
-				need_lstat = 0;//(err < 0 ? errno == ENOENT : !S_ISDIR(f->stat.st_mode));
+				need_lstat = 0; //(err < 0 ? errno == ENOENT : !S_ISDIR(f->stat.st_mode));
 				myerror("Fix me\n sort.c");
 				if (!need_lstat)
 					break;
@@ -786,32 +840,35 @@ uintmax_t gobble_file(char const *name, enum filetype type, long inode,
 
 		default: /* DEREF_NEVER */
 			err = stat(absolute_name, f);
+			strcpy(f->fib.fib_FileName,absolute_name);
+
 			do_deref = false;
 			break;
 		}
 
+		if (err != 0) {
+			/* Failure to stat a command line argument leads to
+			 an exit status of 2.  For other files, stat failure
+			 provokes an exit status of 1.  */
+			//file_failure (command_line_arg,_("cannot access %s"), absolute_name);
+			myerror("cannot access %s\n", absolute_name);
+			if (command_line_arg) {
+				if (ff) myfree(ff);
+				return 0;
+			}
 
-	if (err != 0)
-	        {
-	          /* Failure to stat a command line argument leads to
-	             an exit status of 2.  For other files, stat failure
-	             provokes an exit status of 1.  */
-	          //file_failure (command_line_arg,_("cannot access %s"), absolute_name);
-	          myerror("cannot access %s",absolute_name);
-	          if (command_line_arg) {
-	        	  myfree(absolute_name);
-	        	  return 0;
-	          }
+			myerror("weird %s\n",name);
+			// FIXME: f->name = xstrdup (name);
+			cwd_n_used++;
+			myfree(absolute_name);
+			return 0;
+		}
 
-
-	          // FIXME: f->name = xstrdup (name);
-	          cwd_n_used++;
-	          myfree(absolute_name);
-	          return 0;
-	        }
-
-	myfree(absolute_name);
+		//displayFib(f);
+		if (ff) myfree(ff);
 	}
+	 cwd_n_used++;
+	 return f->fib.fib_NumBlocks;
 }
 
 //

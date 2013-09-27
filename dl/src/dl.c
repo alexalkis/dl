@@ -36,6 +36,7 @@
 #include "string.h"
 #include "sort.h"
 #include "pattern.h"
+#include "human.h"
 
 void GetWinBounds(register int *w __asm("a0"), register int *h __asm("a1"));
 
@@ -93,8 +94,13 @@ extern size_t max_idx;
 extern enum indicator_style indicator_style;
 extern bool directories_first;
 extern enum Dereference_symlink dereference;
+extern int human_output_opts;
 
-struct pending *pending_dirs;
+extern uintmax_t output_block_size;
+extern int file_human_output_opts;
+extern uintmax_t file_output_block_size;
+
+extern struct pending *pending_dirs;
 size_t tabsize = 8;
 extern struct highlight highlight_tabx13[13], *highlight_tab;
 int OSVersion;
@@ -148,19 +154,23 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 			arg = strtok(cliline, " ");
 			if (init_structures()) {
 				do {
-					Dir(arg);
+					//Dir(arg);
+					gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
+					//queue_directory ("/", NULL, true);
+				} while ((arg = strtok(NULL, " ")) && !gotBreak);
 					if (cwd_n_used) {
 						sort_files();
 						if (!immediate_dirs)
-							extract_dirs_from_files(arg, true);
+							extract_dirs_from_files(NULL, true);
 						/* 'cwd_n_used' might be zero now.  */
 						if (cwd_n_used) {
 							print_current_files();
 							if (pending_dirs)
-								bprintf("\n");
+								bprintf("huh?%s\n",pending_dirs->realname);
 						}
 						struct pending *thispend;
 						while (pending_dirs) {
+
 
 							thispend = pending_dirs;
 							pending_dirs = pending_dirs->next;
@@ -182,7 +192,7 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 								continue;
 							}
 							//}
-							//myprintf("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
+							myprintf("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
 							clear_files();
 
 							Dir(thispend->name);
@@ -199,7 +209,7 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 
 						clear_files();
 					}
-				} while ((arg = strtok(NULL, " ")) && !gotBreak);
+				//} while ((arg = strtok(NULL, " ")) && !gotBreak);
 				free_structures();
 			}
 		}
@@ -251,13 +261,17 @@ int ParseSwitches(char *filedir)
 					gSort = SORT_NONE;
 					break;
 				case 'h':
+					file_human_output_opts = human_output_opts =
+					            human_autoscale | human_SI | human_base_1024;
+					          file_output_block_size = output_block_size = 1;
 					gTimeDateFormat = TIMEDATE_HUMAN;
 					break;
 				case 'l':
 					gDisplayMode = DISPLAY_LONG;
 					break;
 				case 's':
-					gSize = SIZE_BLOCKS;
+					print_block_size=true;
+					//gSize = SIZE_BLOCKS;
 					break;
 				case 'x':
 					gDisplayMode = DISPLAY_HORIZONTAL;

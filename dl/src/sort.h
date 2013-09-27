@@ -14,9 +14,9 @@
 
 typedef short int bool;
 typedef int size_t;
-typedef unsigned long long uintmax_t;
 
 
+#define NOT_AN_INODE_NUMBER (-1)
 #define MIN(a,b)	((a>b)?b:a)
 #define MAX(a,b)	((a>b)?a:b)
 #define LOOP_DETECT (!!active_dir_set)
