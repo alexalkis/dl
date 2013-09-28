@@ -152,11 +152,13 @@ void free_structures(void)
 		myfree((char * ) cwd_file);
 	if (sorted_file)
 		myfree((char * ) sorted_file);
+	myfree(column_info[0].col_arr);
 	if (column_info)
 		myfree((char * )column_info);
 	if (p)
 		myfree((char * )p);
 	free_pending_ent(pending_dirs);
+
 	cwd_file = sorted_file = column_info = p = pending_dirs = NULL;
 }
 

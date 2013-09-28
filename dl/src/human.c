@@ -525,8 +525,10 @@ char *human_readable (int n, char *buf, int opts,int from_block_size, int to_blo
 	//myerror("\n--------->fmt=\"%s\" for n=%ld\n",fmt,n);
 	//workarround cause exec's rawdofmt doesn't support the '*' variable width
 	mysprintf(buf,fmt,n);
+	if (opts & human_autoscale) {
 		int len=strlen(buf);
 		buf[len]=power_letter[s];
 		buf[len+1]='\0';
+	}
 	return buf;
 }

@@ -110,7 +110,7 @@ BPTR StdErr;
 struct highlight highlight_cursor = { "\x9b" " p", "\x9b" "0 p", 0 };
 int windowWidth = 77;
 int windowHeight = 30;
-int nDirs, nFiles, nTotalSize, nTotalBlocks;
+int nDirs, nFiles, nTotalSize, total_blocks;
 #define DOSLIB	"dos.library"
 #define DOSVER	33L			/* We require AT LEAST V33 of OS */
 int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
@@ -229,7 +229,7 @@ void showTotals(void)
 {
 	if (cwd_n_used)
 		bprintf("Files: %ld Size: %ld Blocks: %ld  Directories: %ld\n", nFiles,
-				nTotalSize, nTotalBlocks, nDirs);
+				nTotalSize, total_blocks, nDirs);
 }
 
 /* Parses the command line, acts on switches
@@ -323,7 +323,7 @@ void Dir(char *filedir)
 	BPTR lock = 0L;
 	int noPattern;
 
-	nDirs = nFiles = nTotalSize = nTotalBlocks = 0;
+	nDirs = nFiles = nTotalSize = total_blocks = 0;
 
 	if (ContainsWildchar(filedir)) {
 		dir = getDirectory(filedir);
@@ -362,7 +362,7 @@ void Dir(char *filedir)
 						fib.fib_Size = 0; ///kludge to fix the 'sorting by size' issue
 					}
 					addEntry(&fib);
-					nTotalBlocks += fib.fib_NumBlocks;
+					total_blocks += fib.fib_NumBlocks;
 				}
 			}
 
