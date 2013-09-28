@@ -145,6 +145,11 @@ void clear_files(void)
 	inode_number_width = 0;
 	block_size_width = 0;
 	file_size_width = 0;
+	if (p) {
+		myfree((char * )p);
+		p=0;
+	}
+
 }
 void free_structures(void)
 {
@@ -152,11 +157,8 @@ void free_structures(void)
 		myfree((char * ) cwd_file);
 	if (sorted_file)
 		myfree((char * ) sorted_file);
-	myfree(column_info[0].col_arr);
-	if (column_info)
-		myfree((char * )column_info);
-	if (p)
-		myfree((char * )p);
+	if (column_info) myfree((char * )column_info);
+
 	free_pending_ent(pending_dirs);
 
 	cwd_file = sorted_file = column_info = p = pending_dirs = NULL;
@@ -728,9 +730,10 @@ static void init_column_info(void)
 			size_t s = column_info_alloc + 1 + new_column_info_alloc;
 			size_t t = s * column_info_growth;
 			if (s < new_column_info_alloc || t / column_info_growth != s)
-				myprintf("Dealloc and close everything\n");
+				myerror("Dealloc and close everything\n"__FILE__);
 
-			save = p = (int *) mymalloc(t / 2 * sizeof *p);
+			save=p = (int *) mymalloc(t / 2 * sizeof *p);
+			myerror("malloc'ing %ld\n",t / 2 * sizeof *p);
 		}
 
 		/* Grow the triangle by parceling out the cells just allocated.  */

@@ -169,8 +169,7 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 						/* 'cwd_n_used' might be zero now.  */
 						if (cwd_n_used) {
 							print_current_files();
-							if (pending_dirs)
-								bprintf("huh?%s\n",pending_dirs->realname);
+							//if (pending_dirs) bprintf("huh?%s\n",pending_dirs->realname);
 						}
 						struct pending *thispend;
 						while (pending_dirs) {
@@ -196,7 +195,7 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 								continue;
 							}
 							//}
-							myprintf("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
+							//myprintf("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
 							clear_files();
 
 							Dir(thispend->name);
@@ -346,8 +345,7 @@ void Dir(char *filedir)
 			strcpy(fib.fib_FileName, dir);
 			addEntry(&fib);
 		} else {
-			if (strlen(filedir))
-				bprintf("%s:\n", filedir);
+			//if (strlen(filedir))bprintf("%s\n", filedir);
 			//myprintf("Directory of %s (%s):\n", fib.fib_FileName, dir);
 			while (ExNext(lock, &fib) && !gotBreak) {
 				TestBreak();
