@@ -181,18 +181,22 @@ _realmalloc:
 		rts
 
 
-
+FREENULL = 0
 		.text
         .proc
         .globl  _realfree
 _realfree:
+		.ifgt FREENULL
+		tst.l	a0
+		jeq		.nof
+		.endif
 		move.l	a6,-(sp)
-		lea	-4(a0),a1			|Put in sys reg
+		lea		-4(a0),a1		|Put in sys reg
 		move.l	(a1),d0			|d0 = size to free
 		move.l  _SysBase,a6
         jsr     _LVOFreeMem(a6)
 		movea.l	(sp)+,a6
-		rts
+.nof:	rts
 
 		.macro PICCALL addr
         jbsr    \addr
