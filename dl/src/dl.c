@@ -10,6 +10,8 @@
  dir  490328   (49 bytes per entry) 27.465249s
  ls  2768336  (277 bytes per entry) 47.194482s
  dl  3463296  (346 bytes per entry)	38.662612
+ list    							73.26
+
 
  test2 1000
  dl 297896 (298 bpe) 17.368152s  with -Os,
@@ -96,9 +98,9 @@ extern bool directories_first;
 extern enum Dereference_symlink dereference;
 extern int human_output_opts;
 
-extern uintmax_t output_block_size;
+extern int output_block_size;
 extern int file_human_output_opts;
-extern uintmax_t file_output_block_size;
+extern int file_output_block_size;
 
 extern struct pending *pending_dirs;
 size_t tabsize = 8;
@@ -134,6 +136,8 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		bprintf("%s", highlight_cursor.off);
 		cliline[linelen - 1] = '\0';
 		//bprintf("going in..,\n");bflush();
+		print_block_size=false;
+		format = many_per_line;
 		int goon = ParseSwitches(cliline);
 		//bprintf("got out..,\n");bflush();
 

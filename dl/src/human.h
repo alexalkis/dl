@@ -43,7 +43,7 @@
 
 #define EXIT_SUCCESS	(0)
 
-#define ST_NBLOCKSIZE 1024
+#define ST_NBLOCKSIZE 512
 
 
 
@@ -51,7 +51,7 @@ typedef	 long long	intmax_t;
 typedef long	ptrdiff_t;
 typedef unsigned short security_class_t;
 #define security_context_t char*
-typedef	 unsigned long long	uintmax_t;
+//typedef	 unsigned long long	uintmax_t;
 #if __WORDSIZE == 64
 #  define __INT64_C(c)  c ## L
 #  define __UINT64_C(c) c ## UL
@@ -124,9 +124,9 @@ enum
 
 #define ST_NBLOCKS(x) ((x + 512 - 1) / 512)
 
-char *human_readable (uintmax_t, char *, int, uintmax_t, uintmax_t);
-
+char *human_readable (int n, char *buf, int opts,int from_block_size, int to_block_size);
 #ifndef AMIGA
+char *human_readable (uintmax_t, char *, int, uintmax_t, uintmax_t);
 enum strtol_error human_options (char const *, int *, uintmax_t *);
 #endif
 #endif /* HUMAN_H_ */

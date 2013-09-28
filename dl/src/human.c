@@ -25,7 +25,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 /* Written by Paul Eggert and Larry McVoy.  */
-
+#ifndef AMIGA
 #ifndef AMIGA
 #include <config.h>
 #endif
@@ -485,3 +485,48 @@ human_options (char const *spec, int *opts, uintmax_t *block_size)
   return e;
 }
 #endif
+#endif
+
+#include "human.h"
+
+extern int block_size_width;
+
+static const char power_letter[] =
+{
+  'b',	/* not used */
+  'K',	/* kibi ('k' for kilo is a special case) */
+  'M',	/* mega or mebi */
+  'G',	/* giga or gibi */
+  'T',	/* tera or tebi */
+  'P',	/* peta or pebi */
+  'E',	/* exa or exbi */
+  'Z',	/* zetta or 2**70 */
+  'Y'	/* yotta or 2**80 */
+};
+
+void __stdargs mysprintf(char *buffer, char *fmt, ...);
+char *human_readable (int n, char *buf, int opts,int from_block_size, int to_block_size)
+{
+	static char fmt[]="%1ld";
+	int s=0;
+	if (opts & human_autoscale) {
+		n=n*from_block_size;
+		int cn=n;
+		while( (cn+511) / 1024) {
+			++s;
+			n= (n+511)/1024;
+			cn = (cn+511) / 1024;
+		}
+	}
+
+	if (block_size_width)
+		fmt[1]=(block_size_width-1)+'0';
+
+	//myerror("\n--------->fmt=\"%s\" for n=%ld\n",fmt,n);
+	//workarround cause exec's rawdofmt doesn't support the '*' variable width
+	mysprintf(buf,fmt,n);
+		int len=strlen(buf);
+		buf[len]=power_letter[s];
+		buf[len+1]='\0';
+	return buf;
+}

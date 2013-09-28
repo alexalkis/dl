@@ -66,9 +66,9 @@ int inode_number_width;
 int block_size_width;
 int file_size_width;
 int human_output_opts;
-uintmax_t output_block_size;
+int output_block_size;
 int file_human_output_opts;
-uintmax_t file_output_block_size = 1;
+int file_output_block_size = 1;
 
 enum indicator_style indicator_style;
 bool directories_first;
@@ -118,7 +118,7 @@ void shellSort(struct fileinfo **a, int n);
 
 void print_many_per_line(void);
 static void print_horizontal(void);
-
+size_t length_of_file_name_and_frills(const struct fileinfo *f);
 //node *theTree = NULL;
 
 int init_structures(void)
@@ -188,7 +188,7 @@ char *file_name_concat(char *dirname, char *name, char *dunno)
 	int spare = 0;
 	if (dirname[len1 - 1] != '/' && dirname[len1 - 1] != ':')
 		spare = 1;
-	char *new = mymalloc(len1+len2+1+spare);
+	char *new = mymalloc(len1 + len2 + 1 + spare);
 	if (new) {
 		memcpy(new, dirname, len1);
 		if (spare)
@@ -220,8 +220,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 			if (!dirname) {
 
 				queue_directory(f->fib.fib_FileName, 0, command_line_arg);
-			}
-			else {
+			} else {
 				//bprintf("--> %s  %s\n", dirname,f->fib.fib_FileName);
 				char *name = file_name_concat(dirname, f->fib.fib_FileName,
 				NULL);
@@ -341,6 +340,17 @@ void addEntry(struct FileInfoBlock *fib)
 
 	cwd_file[cwd_n_used].fib = *fib;
 	cwd_n_used++;
+
+	if (format == long_format || print_block_size) {
+		char buf[LONGEST_HUMAN_READABLE + 1];
+		int len = strlen(human_readable(fib->fib_NumBlocks, buf, human_output_opts,ST_NBLOCKSIZE, output_block_size));
+		if (block_size_width < len) {
+			block_size_width = len;
+			myerror("\nnew len: %ld (%ld) \"%s\"\n", len, fib->fib_NumBlocks, buf);
+			if (format==long_format) myerror("long_format\n");
+			if (print_block_size) myerror("print_block_size\n");
+		}
+	}
 }
 
 /* Returns pointer just past the '.' of the string when there is a . in string
@@ -537,7 +547,8 @@ void print_many_per_line(void)
 		/* Print the next row.  */
 		while (1) {
 			struct fileinfo const *f = sorted_file[filesno];
-			size_t name_length = strlen(f->fib.fib_FileName); //length_of_file_name_and_frills (f);
+			//size_t name_length = strlen(f->fib.fib_FileName); //length_of_file_name_and_frills (f);
+			size_t name_length = length_of_file_name_and_frills(f);
 			size_t max_name_length = line_fmt->col_arr[col++];
 			print_file_name_and_frills(f, pos);
 
@@ -556,7 +567,14 @@ void print_many_per_line(void)
 
 size_t print_file_name_and_frills(const struct fileinfo *f, size_t start_col)
 {
+	int i;
+	char buf[LONGEST_HUMAN_READABLE + 1];
 
+	if (print_block_size) {
+		human_readable(f->fib.fib_NumBlocks, buf, human_output_opts,
+		ST_NBLOCKSIZE, output_block_size);
+		bprintf("%s ", /*format == with_commas ? 0 : block_size_width,*/buf);
+	}
 	///TODO: add blocks and calc width
 	bprintf("%s%s%s", highlight_tab[f->fib.fib_DirEntryType].on,
 			f->fib.fib_FileName, highlight_tab[f->fib.fib_DirEntryType].off);
@@ -574,14 +592,14 @@ size_t calculate_columns(bool by_columns)
 	/* Normally the maximum number of columns is determined by the
 	 screen width.  But if few files are available this might limit it
 	 as well.  */
-	size_t max_cols = MIN (max_idx, cwd_n_used);
+	size_t max_cols = MIN(max_idx, cwd_n_used);
 
 	init_column_info();
 
 	/* Compute the maximum number of possible columns.  */
 	for (filesno = 0; filesno < cwd_n_used; ++filesno) {
 		struct fileinfo const *f = sorted_file[filesno];
-		size_t name_length = strlen(f->fib.fib_FileName); //length_of_file_name_and_frills (f);
+		size_t name_length = length_of_file_name_and_frills(f);
 		size_t i;
 
 		for (i = 0; i < max_cols; ++i) {
@@ -612,49 +630,71 @@ size_t calculate_columns(bool by_columns)
 	return cols;
 }
 
-char *umaxtostr(LONG num,char *buf)
+char *umaxtostr(LONG num, char *buf)
 {
-	mysprintf(buf,"%ld",num);
+	mysprintf(buf, "%ld", num);
 	return buf;
 }
-size_t length_of_file_name_and_frills (const struct fileinfo *f)
+
+char get_type_indicator(const struct fileinfo *f)
 {
-  size_t len = 0;
-  size_t name_width;
-  char buf[LONGEST_HUMAN_READABLE + 1];
+	char c;
 
-  if (print_inode)
-    len += 1 + (format == with_commas
-                ? strlen (umaxtostr (f->fib.fib_DiskKey, buf))
-                : inode_number_width);
+	switch (f->fib.fib_DirEntryType) {
+	case ST_ROOT:
+	case ST_USERDIR:
+		c = '/';
+		break;
+	case ST_LINKDIR:
+		c = '@';
+		break;
+	default:
+		c = 0;
 
-  if (print_block_size)
-    len += 1 + (format == with_commas
-                ? strlen (human_readable (ST_NBLOCKS (f->fib.fib_NumBlocks), buf,
-                                            human_output_opts, ST_NBLOCKSIZE,
-                                            output_block_size))
-                : block_size_width);
+	}
+	return c;
+}
+
+size_t length_of_file_name_and_frills(const struct fileinfo *f)
+{
+	size_t len = 0;
+	size_t name_width;
+	char buf[LONGEST_HUMAN_READABLE + 1];
+
+	if (print_inode)
+		len += 1
+				+ (format == with_commas ?
+						strlen(umaxtostr(f->fib.fib_DiskKey, buf)) :
+						inode_number_width);
+
+	if (print_block_size)
+		len += 1
+				+ (format == with_commas ?
+						strlen(
+								human_readable(ST_NBLOCKS(f->fib.fib_NumBlocks),
+										buf, human_output_opts, ST_NBLOCKSIZE,
+										output_block_size)) :
+						block_size_width);
 
 //  if (print_scontext)
 //    len += 1 + (format == with_commas ? strlen (f->scontext) : scontext_width);
 
-  //quote_name (NULL, f->fib.fib_FileName, filename_quoting_options, &name_width);
-  name_width=strlen(f->fib.fib_FileName);
-  len += name_width;
+	//quote_name (NULL, f->fib.fib_FileName, filename_quoting_options, &name_width);
+	name_width = strlen(f->fib.fib_FileName);
+	len += name_width;
 
-  if (indicator_style != none)
-    {
-      char c = get_type_indicator (f->stat_ok, f->stat.st_mode, f->filetype);
-      len += (c != 0);
-    }
+	if (indicator_style != none) {
+		char c = get_type_indicator(f);
+		len += (c != 0);
+	}
 
-  return len;
+	return len;
 }
 
 static void init_column_info(void)
 {
 	size_t i;
-	size_t max_cols = MIN (max_idx, cwd_n_used);
+	size_t max_cols = MIN(max_idx, cwd_n_used);
 	size_t *save;
 	/* Currently allocated columns in column_info.  */
 	static size_t column_info_alloc;
@@ -688,7 +728,7 @@ static void init_column_info(void)
 			if (s < new_column_info_alloc || t / column_info_growth != s)
 				myprintf("Dealloc and close everything\n");
 
-			save = p = (int *) mymalloc (t / 2* sizeof *p);
+			save = p = (int *) mymalloc(t / 2 * sizeof *p);
 		}
 
 		/* Grow the triangle by parceling out the cells just allocated.  */
@@ -718,7 +758,7 @@ static void print_horizontal(void)
 	size_t cols = calculate_columns(false);
 	struct column_info const *line_fmt = &column_info[cols - 1];
 	struct fileinfo const *f = sorted_file[0];
-	size_t name_length = strlen(f->fib.fib_FileName); //length_of_file_name_and_frills (f);
+	size_t name_length = length_of_file_name_and_frills(f);
 	size_t max_name_length = line_fmt->col_arr[0];
 
 	/* Print first entry.  */
@@ -741,7 +781,7 @@ static void print_horizontal(void)
 		f = sorted_file[filesno];
 		print_file_name_and_frills(f, pos);
 
-		name_length = strlen(f->fib.fib_FileName); //length_of_file_name_and_frills (f);
+		name_length = length_of_file_name_and_frills(f);
 		max_name_length = line_fmt->col_arr[col];
 	}
 	bprintf("\n");
@@ -770,7 +810,7 @@ int stat(char *file, struct fileinfo *f)
 	BPTR lock = 0L;
 	int ret;
 
-	if ((lock = Lock(file,SHARED_LOCK))) {
+	if ((lock = Lock(file, SHARED_LOCK))) {
 		if ((Examine(lock, &f->fib))) {
 			ret = 0;
 		} else {
@@ -784,10 +824,10 @@ int stat(char *file, struct fileinfo *f)
 	return ret;
 }
 
-uintmax_t gobble_file(char const *name, enum filetype type, long inode,
+int gobble_file(char const *name, enum filetype type, long inode,
 		bool command_line_arg, char const *dirname)
 {
-	uintmax_t blocks = 0;
+	int blocks = 0;
 	struct fileinfo *f;
 
 	if (cwd_n_used == cwd_n_alloc) {
@@ -801,14 +841,14 @@ uintmax_t gobble_file(char const *name, enum filetype type, long inode,
 	f->fib.fib_DirEntryType = type;
 	if (command_line_arg || format_needs_stat) {
 		/* Absolute name of this file.  */
-		char *absolute_name, *ff=NULL;
+		char *absolute_name, *ff = NULL;
 		bool do_deref;
 		int err;
 
 		if (name[0] == '/' || dirname[0] == 0)
 			absolute_name = (char *) name;
 		else {
-			ff=absolute_name = mymalloc(strlen(name) + strlen(dirname) + 2);
+			ff = absolute_name = mymalloc(strlen(name) + strlen(dirname) + 2);
 			attach(absolute_name, dirname, name);
 		}
 		switch (dereference) {
@@ -840,7 +880,7 @@ uintmax_t gobble_file(char const *name, enum filetype type, long inode,
 
 		default: /* DEREF_NEVER */
 			err = stat(absolute_name, f);
-			strcpy(f->fib.fib_FileName,absolute_name);
+			strcpy(f->fib.fib_FileName, absolute_name);
 
 			do_deref = false;
 			break;
@@ -853,11 +893,12 @@ uintmax_t gobble_file(char const *name, enum filetype type, long inode,
 			//file_failure (command_line_arg,_("cannot access %s"), absolute_name);
 			myerror("cannot access %s\n", absolute_name);
 			if (command_line_arg) {
-				if (ff) myfree(ff);
+				if (ff)
+					myfree(ff);
 				return 0;
 			}
 
-			myerror("weird %s\n",name);
+			myerror("weird %s\n", name);
 			// FIXME: f->name = xstrdup (name);
 			cwd_n_used++;
 			myfree(absolute_name);
@@ -865,10 +906,21 @@ uintmax_t gobble_file(char const *name, enum filetype type, long inode,
 		}
 
 		//displayFib(f);
-		if (ff) myfree(ff);
+		if (ff)
+			myfree(ff);
 	}
-	 cwd_n_used++;
-	 return f->fib.fib_NumBlocks;
+
+	if (format == long_format || print_block_size) {
+		char buf[LONGEST_HUMAN_READABLE + 1];
+		int len = strlen(human_readable(blocks, buf, human_output_opts,
+		ST_NBLOCKSIZE, output_block_size));
+		if (block_size_width < len) {
+			block_size_width = len;
+
+		}
+	}
+	cwd_n_used++;
+	return f->fib.fib_NumBlocks;
 }
 
 //
