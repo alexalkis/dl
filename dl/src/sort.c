@@ -145,20 +145,22 @@ void clear_files(void)
 	inode_number_width = 0;
 	block_size_width = 0;
 	file_size_width = 0;
-	if (p) {
-		myfree((char * )p);
-		p=0;
-	}
-
 }
+
 void free_structures(void)
 {
 	if (cwd_file)
 		myfree((char * ) cwd_file);
 	if (sorted_file)
 		myfree((char * ) sorted_file);
-	if (column_info) myfree((char * )column_info);
+	if (column_info) {
+		if (p) {
+			myfree((char * )p);
+			p = 0;
+		}
 
+		myfree((char * )column_info);
+	}
 	free_pending_ent(pending_dirs);
 
 	cwd_file = sorted_file = column_info = p = pending_dirs = NULL;
@@ -349,7 +351,9 @@ void addEntry(struct FileInfoBlock *fib)
 
 	if (format == long_format || print_block_size) {
 		char buf[LONGEST_HUMAN_READABLE + 1];
-		int len = strlen(human_readable(fib->fib_NumBlocks, buf, human_output_opts,ST_NBLOCKSIZE, output_block_size));
+		int len = strlen(
+				human_readable(fib->fib_NumBlocks, buf, human_output_opts,
+				ST_NBLOCKSIZE, output_block_size));
 		if (block_size_width < len) {
 			block_size_width = len;
 			//myerror("\nnew len: %ld (%ld) \"%s\"\n", len, fib->fib_NumBlocks, buf);
@@ -708,6 +712,11 @@ static void init_column_info(void)
 	if (column_info_alloc < max_cols) {
 		size_t new_column_info_alloc;
 
+		if (p) {
+			myfree((char * )p);
+			p = 0;
+		}
+
 		if (max_cols < max_idx / 2) {
 			/* The number of columns is far less than the display width
 			 allows.  Grow the allocation, but only so that it's
@@ -734,7 +743,7 @@ static void init_column_info(void)
 			if (s < new_column_info_alloc || t / column_info_growth != s)
 				myerror("Dealloc and close everything\n"__FILE__);
 
-			save=p = (int *) mymalloc(t / 2 * sizeof *p);
+			save = p = (int *) mymalloc(t / 2 * sizeof *p);
 			//myerror("malloc'ing %ld\n",t / 2 * sizeof *p);
 		}
 
@@ -917,8 +926,8 @@ int gobble_file(char const *name, enum filetype type, long inode,
 			myfree(ff);
 	}
 
-	if (f->fib.fib_DirEntryType>0 && command_line_arg)
-		f->fib.fib_DirEntryType=arg_directory;
+	if (f->fib.fib_DirEntryType > 0 && command_line_arg)
+		f->fib.fib_DirEntryType = arg_directory;
 	blocks = f->fib.fib_NumBlocks;
 	if (format == long_format || print_block_size) {
 		char buf[LONGEST_HUMAN_READABLE + 1];

@@ -213,7 +213,7 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 							p = human_readable(total_blocks, buf,
 									human_output_opts,
 									ST_NBLOCKSIZE, output_block_size);
-							bprintf("total %s\n", p);
+							bprintf("%s\ntotal %s\n",thispend->name, p);
 
 						}
 						//bprintf("cwd_n_used = %ld\n",cwd_n_used);
@@ -223,6 +223,7 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 
 						free_pending_ent(thispend);
 						print_dir_name = true;
+						if (pending_dirs) bprintf("\n");
 					}
 
 					clear_files();
