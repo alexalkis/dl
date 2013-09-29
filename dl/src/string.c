@@ -6,11 +6,9 @@
  */
 #include "string.h"
 
-
 static char *scanpoint = NULL;
 
-
-char *strcpy(char *dst,const char *src)
+char *strcpy(char *dst, const char *src)
 {
 	register char *dscan;
 	register const char *sscan;
@@ -19,18 +17,18 @@ char *strcpy(char *dst,const char *src)
 	sscan = src;
 	while ((*dscan++ = *sscan++) != '\0')
 		continue;
-	return(dst);
+	return (dst);
 }
 
 char *strdup(const char *str)
 {
 	//static int sum=0;
-	int len=strlen(str)+1;
+	int len = strlen(str) + 1;
 	//sum+=len;
 	//bprintf("%ld bytes ",sum);
 	char *ret = mymalloc(len);
 	if (ret) {
-		strcpy(ret,str);
+		strcpy(ret, str);
 	}
 	return ret;
 }
@@ -48,20 +46,22 @@ void bzero(char *dest, int n)
 }
 
 /*
-int strlen(const char *str)
-{
-	int ret = 0;
-	while (*str++)
-		++ret;
-	return ret;
-}
-*/
+ int strlen(const char *str)
+ {
+ int ret = 0;
+ while (*str++)
+ ++ret;
+ return ret;
+ }
+ */
 int strlen(const char *string)
-{ const char *s=string;
+{
+	const char *s = string;
 
-  do;while(*s++); return ~(string-s);
+	do
+		; while (*s++);
+	return ~(string - s);
 }
-
 
 char *strtok(char *s, const char *delim)
 {
@@ -133,7 +133,6 @@ int strcmp(char *str1, char *str2)
 	return *str1 - *str2;
 }
 
-
 int stricmp(char *str1, char *str2)
 {
 	UBYTE c1, c2;
@@ -151,80 +150,80 @@ int stricmp(char *str1, char *str2)
 	return (LONG) c1 - (LONG) c2;
 }
 
-char *memcpy(char *dst,char *src,int size)
+char *memcpy(char *dst, char *src, int size)
 {
 	register char *d;
 	register const char *s;
 	register int n;
 
 	if (size <= 0)
-		return(dst);
+		return (dst);
 
 	s = src;
 	d = dst;
-	if (s <= d && s + (size-1) >= d) {
+	if (s <= d && s + (size - 1) >= d) {
 		/* Overlap, must copy right-to-left. */
-		s += size-1;
-		d += size-1;
+		s += size - 1;
+		d += size - 1;
 		for (n = size; n > 0; n--)
 			*d-- = *s--;
 	} else
 		for (n = size; n > 0; n--)
 			*d++ = *s++;
 
-	return(dst);
+	return (dst);
 }
 
-void fastmemcpy(long *dst, long *src,int len)
+void fastmemcpy(long *dst, long *src, int len)
 {
 #ifdef DEBUGMEMORY
-	if (len&3)
-		myprintf("Huh...weird len %ld\n",len);
+	if (len & 3)
+		myprintf("Huh...weird len %ld\n", len);
 #endif
-	len>>=2;
-	while(len--)
-		*dst++=*src++;
+	len >>= 2;
+	while (len--)
+		*dst++ = *src++;
 }
 
-
-
-char *realloc(char *orig,int newsize)
+char *realloc(char *orig, int newsize)
 {
 
 	char *new = mymalloc(newsize);
 	if (new) {
-		int *getsize=(int *)orig;
+		int *getsize = (int *) orig;
 		--getsize;	//decrease the pointer to go to saved size
 		//myprintf("Got %ld new bytes, old size was %ld\n",newsize,*getsize);
 		//fastmemcpy(new,orig,(*getsize)-4); //old size has the saved size in, so we subtract it
 		if (orig) {
-			memcpy(new,orig,(*getsize)-4);
+			memcpy(new, orig, (*getsize) - 4);
 			myfree(orig);
 		}
 	} else {
-		myprintf("Realloc failed on %ld bytes.\n",newsize);
+		myprintf("Realloc failed on %ld bytes.\n", newsize);
 	}
 	return new;
 }
 //char *mymalloc(register int n __asm("d0"));
-char *dmalloc(int size, char *file,int line)
+char *dmalloc(int size,char *function, char *file, int line)
 {
-	static int c=0;
-	static int sum=0;
+	static int c = 0;
+	static int sum = 0;
 	++c;
-	sum+=size;
-	myprintf("Alloc: #%ld %ldb %s, line %ld, Total Allc'd: %ld\n",c,size,file,line,sum);
+	sum += size;
+	myprintf("A: #%ld %ld/%ld %s %s, line %ld\n", c, size,sum,
+			function,file, line);
 	return realmalloc(size);
 }
 
-void dfree(char *mem,char *file, int line)
+void dfree(char *mem,char *function, char *file, int line)
 {
-	static int c=0;
-		static int sum=0;
-		++c;
-		int *getsize=(int *)mem;
-		--getsize;
-		sum+=((*getsize)-4);
-		myprintf("Free: #%ld %ldb %s, line %ld, Total Freed: %ld\n",c,(*getsize)-4,file,line,sum);
-		return realfree(mem);
+	static int c = 0;
+	static int sum = 0;
+	++c;
+	int *getsize = (int *) mem;
+	--getsize;
+	sum += ((*getsize) - 4);
+	myprintf("F: #%ld %ld/%ld %s %s, line %ld\n", c,
+			(*getsize) - 4,sum,function, file, line);
+	return realfree(mem);
 }

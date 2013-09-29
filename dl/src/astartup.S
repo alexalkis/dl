@@ -14,6 +14,7 @@ FLUSHONCR 	= 0		| 1--Flush stdout if last char is '\n', 0--Disable
 CHECKCTRLC 	= 0		| 1--Enable ctrl-c check on bflush, 0--Disable
 
 BUFFERSIZE	= 4096
+MPIB		=  512	| Internal buffer for rawdofmt, lives on stack
 
 _LVOAllocMem 	=  -0xc6
 _LVOFreeMem  	=  -0xd2
@@ -27,18 +28,20 @@ _mysprintf:
 
             moveal  4*4(sp),a3
             moveal  5*4(sp),a0
-            lea   6*4(sp),a1
+            lea   	6*4(sp),a1
             lea.l   stuffChar(pc),a2
             move.l  _SysBase,a6
             jsr     _LVORawDoFmt(a6)
 
             movem.l (sp)+,a2/a3/a6
             rts
+
+
 _myprintf:
             moveml a2-a3/a6,-(sp)
             moveal  4*4(sp),a0
-            lea   5*4(sp),a1
-	    	lea     -256(sp),sp		| allocate stack space for produced string
+            lea   	5*4(sp),a1
+	    	lea     -MPIB(sp),sp		| allocate stack space for produced string
 	    	moveal  sp,a3
             lea.l   stuffChar(pc),a2
             move.l  _SysBase,a6
@@ -46,7 +49,7 @@ _myprintf:
 
 	    	move.l  a3,-(sp)		| stack passing parameter, dont use -mregparm
 	    	jsr	    _myPutStr		| just use bprintf it's better ;-)
-            lea	    256+4(sp),sp	| deallocate buffer and the parameter we pushed
+            lea	    MPIB+4(sp),sp	| deallocate buffer and the parameter we pushed
             movem.l (sp)+,a2/a3/a6
             rts
 
@@ -66,7 +69,7 @@ _bprintf:
             moveml a2-a3/a6,-(sp)
             moveal  4*4(sp),a0
             lea   	5*4(sp),a1
-	    	lea     -256(sp),sp		| allocate stack space for produced string
+	    	lea     -MPIB(sp),sp		| allocate stack space for produced string
 	    	moveal  sp,a3
             lea.l   stuffChar(pc),a2
             move.l  _SysBase,a6
@@ -87,8 +90,8 @@ str:    	moveb	(a3)+,d1
 			bne		keep
 			.endif
 			bsr		_bflush
-keep:		lea	    256(sp),sp	| deallocate buffer
-            movem.l (sp)+,a2/a3/a6
+keep:		lea	    MPIB(sp),sp	| deallocate buffer
+            movem.l (sp)+,a2-a3/a6
             rts
 .lcomm _buffer,BUFFERSIZE+256
 

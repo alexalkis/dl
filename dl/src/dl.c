@@ -59,9 +59,6 @@ int ParseSwitches(char *filedir);
 #define VERSION_STRING "1.0"
 BYTE version[] = "\0$VER: dl " VERSION_STRING " (" __DATE__ ")";
 
-
-
-
 struct DosLibrary *DOSBase;
 struct ExecBase *SysBase;
 
@@ -120,9 +117,9 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		DateStamp(&Now);
 		char *arg;
 		GetWinBounds(&windowWidth, &windowHeight);
-		max_idx = MAX (1, windowWidth / 3); //MIN_COLUMN_WIDTH);
+		max_idx = MAX(1, windowWidth / 3); //MIN_COLUMN_WIDTH);
 		OSVersion = (SysBase->LibNode.lib_Version > 34) ? 20 : 13;
-		struct Process *procp = (struct Process *) FindTask (0L);
+		struct Process *procp = (struct Process *) FindTask(0L);
 		StdErr =
 				((struct CommandLineInterface *) BADDR(procp->pr_CLI))->cli_StandardOutput;
 		//struct CommandLineInterface *cli=((struct CommandLineInterface *)BADDR(procp->pr_CLI));
@@ -136,7 +133,7 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		bprintf("%s", highlight_cursor.off);
 		cliline[linelen - 1] = '\0';
 		//bprintf("going in..,\n");bflush();
-		print_block_size=false;
+		print_block_size = false;
 		format = many_per_line;
 		int goon = ParseSwitches(cliline);
 		//bprintf("got out..,\n");bflush();
@@ -162,56 +159,64 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
 					//queue_directory ("/", NULL, true);
 				} while ((arg = strtok(NULL, " ")) && !gotBreak);
+				if (cwd_n_used) {
+					sort_files();
+					if (!immediate_dirs)
+						extract_dirs_from_files(NULL, true);
+					/* 'cwd_n_used' might be zero now.  */
 					if (cwd_n_used) {
-						sort_files();
-						if (!immediate_dirs)
-							extract_dirs_from_files(NULL, true);
-						/* 'cwd_n_used' might be zero now.  */
-						if (cwd_n_used) {
-							print_current_files();
-							//if (pending_dirs) bprintf("huh?%s\n",pending_dirs->realname);
-						}
-						struct pending *thispend;
-						while (pending_dirs) {
-
-
-							thispend = pending_dirs;
-							pending_dirs = pending_dirs->next;
-
-							//if (LOOP_DETECT)
-							//{
-							if (thispend->name == NULL) {
-								/* thispend->name == NULL means this is a marker entry
-								 indicating we've finished processing the directory.
-								 Use its dev/ino numbers to remove the corresponding
-								 entry from the active_dir_set hash table.  */
-								//struct dev_ino di = dev_ino_pop ();
-								//struct dev_ino *found = hash_delete (active_dir_set, &di);
-								/* ASSERT_MATCHING_DEV_INO (thispend->realname, di); */
-								//assert (found);
-								//dev_ino_free (found);
-								//bprintf("free..\n");
-								free_pending_ent(thispend);
-								continue;
-							}
-							//}
-							//myprintf("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
-							clear_files();
-
-							Dir(thispend->name);
-							/* Sort the directory contents.  */
-							sort_files();
-							//bprintf("cwd_n_used = %ld\n",cwd_n_used);
-							if (cwd_n_used)
-								print_current_files();
-							//print_dir (thispend->name, thispend->realname,thispend->command_line_arg);
-
-							free_pending_ent(thispend);
-							print_dir_name = true;
-						}
-
-						clear_files();
+						print_current_files();
+						//if (pending_dirs) bprintf("huh?%s\n",pending_dirs->realname);
 					}
+					struct pending *thispend;
+					while (pending_dirs) {
+
+						thispend = pending_dirs;
+						pending_dirs = pending_dirs->next;
+
+						//if (LOOP_DETECT)
+						//{
+						if (thispend->name == NULL) {
+							/* thispend->name == NULL means this is a marker entry
+							 indicating we've finished processing the directory.
+							 Use its dev/ino numbers to remove the corresponding
+							 entry from the active_dir_set hash table.  */
+							//struct dev_ino di = dev_ino_pop ();
+							//struct dev_ino *found = hash_delete (active_dir_set, &di);
+							/* ASSERT_MATCHING_DEV_INO (thispend->realname, di); */
+							//assert (found);
+							//dev_ino_free (found);
+							//bprintf("free..\n");
+							free_pending_ent(thispend);
+							continue;
+						}
+						//}
+						//myprintf("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
+						clear_files();
+
+						Dir(thispend->name);
+						/* Sort the directory contents.  */
+						sort_files();
+						if (format == long_format || print_block_size) {
+							const char *p;
+							char buf[LONGEST_HUMAN_READABLE + 1];
+							p = human_readable(total_blocks, buf,
+									human_output_opts,
+									ST_NBLOCKSIZE, output_block_size);
+							bprintf("total %s\n", p);
+
+						}
+						//bprintf("cwd_n_used = %ld\n",cwd_n_used);
+						if (cwd_n_used)
+							print_current_files();
+						//print_dir (thispend->name, thispend->realname,thispend->command_line_arg);
+
+						free_pending_ent(thispend);
+						print_dir_name = true;
+					}
+
+					clear_files();
+				}
 				//} while ((arg = strtok(NULL, " ")) && !gotBreak);
 				free_structures();
 			}
@@ -264,16 +269,16 @@ int ParseSwitches(char *filedir)
 					gSort = SORT_NONE;
 					break;
 				case 'h':
-					file_human_output_opts = human_output_opts =
-					            human_autoscale | human_SI | human_base_1024;
-					          file_output_block_size = output_block_size = 1;
+					file_human_output_opts = human_output_opts = human_autoscale
+							| human_SI | human_base_1024;
+					file_output_block_size = output_block_size = 1;
 					gTimeDateFormat = TIMEDATE_HUMAN;
 					break;
 				case 'l':
 					gDisplayMode = DISPLAY_LONG;
 					break;
 				case 's':
-					print_block_size=true;
+					print_block_size = true;
 					//gSize = SIZE_BLOCKS;
 					break;
 				case 'x':
@@ -284,8 +289,15 @@ int ParseSwitches(char *filedir)
 					break;
 				case '-':
 					if (!strcmp(f + 1, "version")) {
-						bprintf(
-								"dl Version 1.0 (" __DATE__ ")\nWritten by Alex Argiropoulos\n\nUses fpattern 1.08, Copyright ©1997-1998 David R. Tribble\n");
+						myprintf(
+								"dl Version 1.0 (" __DATE__ ")\nWritten by Alex Argiropoulos\n\nUses fpattern 1.08, Copyright ©1997-1998 David R. Tribble\n"
+								"\nUses parts from:\n"
+								"ls (GNU coreutils) 8.13\n"
+								"Copyright (C) 2011 Free Software Foundation, Inc.\n"
+								"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
+								"This is free software: you are free to change and redistribute it.\n"
+								"There is NO WARRANTY, to the extent permitted by law.\n"
+								"Written by Richard M. Stallman and David MacKenzie.\n");
 						return -1;
 					} else if (!strcmp(f + 1, "time=full")) {
 						gTimeDateFormat = TIMEDATE_FULL;
@@ -423,7 +435,7 @@ void displayFib(struct FileInfoBlock *fib)
 void TestBreak(void)
 {
 	ULONG oldsig;
-	oldsig = SetSignal(0L,(LONG)SIGBREAKF_CTRL_C);
+	oldsig = SetSignal(0L, (LONG)SIGBREAKF_CTRL_C);
 	if ((oldsig & SIGBREAKF_CTRL_C) != 0) {
 		myerror("\2330m\233 p***BREAK\n");
 		gotBreak = 1;

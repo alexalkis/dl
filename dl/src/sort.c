@@ -211,6 +211,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		/* Insert a marker entry first.  When we dequeue this marker entry,
 		 we'll know that DIRNAME has been processed and may be removed
 		 from the set of active directories.  */
+		//bprintf("queuing %s ...\n",dirname);
 		queue_directory(NULL, dirname, false);
 	}
 
@@ -222,7 +223,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		if (f->fib.fib_EntryType > 0) // (is_directory (f))
 				{
 			if (!dirname) {
-
+				//bprintf("2. queuing \"%s\" ...command_line_arg=%s\n",dirname,command_line_arg ? "TRUE":"FALSE");
 				queue_directory(f->fib.fib_FileName, 0, command_line_arg);
 			} else {
 				//bprintf("--> %s  %s\n", dirname,f->fib.fib_FileName);
@@ -246,6 +247,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		j += (f->fib.fib_DirEntryType != arg_directory);
 	}
 	cwd_n_used = j;
+	//bprintf("j=%ld\n",j);
 }
 
 void free_ent(struct fileinfo *f)
@@ -350,9 +352,9 @@ void addEntry(struct FileInfoBlock *fib)
 		int len = strlen(human_readable(fib->fib_NumBlocks, buf, human_output_opts,ST_NBLOCKSIZE, output_block_size));
 		if (block_size_width < len) {
 			block_size_width = len;
-			myerror("\nnew len: %ld (%ld) \"%s\"\n", len, fib->fib_NumBlocks, buf);
-			if (format==long_format) myerror("long_format\n");
-			if (print_block_size) myerror("print_block_size\n");
+			//myerror("\nnew len: %ld (%ld) \"%s\"\n", len, fib->fib_NumBlocks, buf);
+			//if (format==long_format) myerror("long_format\n");
+			//if (print_block_size) myerror("print_block_size\n");
 		}
 	}
 }
@@ -733,7 +735,7 @@ static void init_column_info(void)
 				myerror("Dealloc and close everything\n"__FILE__);
 
 			save=p = (int *) mymalloc(t / 2 * sizeof *p);
-			myerror("malloc'ing %ld\n",t / 2 * sizeof *p);
+			//myerror("malloc'ing %ld\n",t / 2 * sizeof *p);
 		}
 
 		/* Grow the triangle by parceling out the cells just allocated.  */
@@ -915,13 +917,17 @@ int gobble_file(char const *name, enum filetype type, long inode,
 			myfree(ff);
 	}
 
+	if (f->fib.fib_DirEntryType>0 && command_line_arg)
+		f->fib.fib_DirEntryType=arg_directory;
+	blocks = f->fib.fib_NumBlocks;
 	if (format == long_format || print_block_size) {
 		char buf[LONGEST_HUMAN_READABLE + 1];
 		int len = strlen(human_readable(blocks, buf, human_output_opts,
 		ST_NBLOCKSIZE, output_block_size));
+		//bprintf("clen=%ld Blocks:%ld  %s\n",len,blocks,buf);
 		if (block_size_width < len) {
 			block_size_width = len;
-
+			//bprintf("len=%ld\n",len);
 		}
 	}
 	cwd_n_used++;

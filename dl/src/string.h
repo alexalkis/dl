@@ -40,10 +40,10 @@ char *realloc(char *orig,int newsize);
 
 //#define DEBUGMEMORY
 #ifdef DEBUGMEMORY
-char *dmalloc(int n, char *s,int line);
-void dfree(char *mem,char *s,int line);
-#define mymalloc(x) dmalloc((x),__FILE__,__LINE__)
-#define myfree(x) 	dfree((x),__FILE__,__LINE__)
+char *dmalloc(int n,char *f, char *s,int line);
+void dfree(char *mem,char *f,char *s,int line);
+#define mymalloc(x) dmalloc((x),__FUNCTION__,__FILE__,__LINE__)
+#define myfree(x) 	dfree((x),__FUNCTION__,__FILE__,__LINE__)
 #else
 #define mymalloc(x) realmalloc((x))
 #define myfree(x)	 realfree((x))

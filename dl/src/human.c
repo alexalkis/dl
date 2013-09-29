@@ -509,18 +509,21 @@ char *human_readable (int n, char *buf, int opts,int from_block_size, int to_blo
 {
 	static char fmt[]="%1ld";
 	int s=0;
+	int t=1;
 	if (opts & human_autoscale) {
 		n=n*from_block_size;
 		int cn=n;
-		while( (cn+511) / 1024) {
+		while( (cn) / 1024) {
 			++s;
 			n= (n+511)/1024;
 			cn = (cn+511) / 1024;
 		}
 	}
+	else
+		t=0;
 
 	if (block_size_width)
-		fmt[1]=(block_size_width-1)+'0';
+		fmt[1]=(block_size_width-t)+'0';
 
 	//myerror("\n--------->fmt=\"%s\" for n=%ld\n",fmt,n);
 	//workarround cause exec's rawdofmt doesn't support the '*' variable width
