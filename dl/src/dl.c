@@ -1,4 +1,16 @@
 /*
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ============================================================================
  Name        : dl.c
  Author      : Alkis Argiropoulos
@@ -13,13 +25,11 @@
  list    							73.26
 
 
- test2 1000
- dl 297896 (298 bpe) 17.368152s  with -Os,
- 19.158888s with -O3, wtf?
- 16.872603s with -02
- dir 74232 ( 74 bpe)  2.650148s
- ls 323096 (323 bpe)  1.887124s
-
+ test2 1000 files
+ dl 297896 (298 bpe)  	3.66s
+ dir 74232 ( 74 bpe)  	2.65s
+ ls 323096 (323 bpe)  	1.88s
+ list					7.38s
  */
 
 //m68k-amigaos-gcc -Os -nostdlib -noixemul -fomit-frame-pointer -o hello  mystart.s hello.c

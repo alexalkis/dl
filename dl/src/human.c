@@ -493,7 +493,7 @@ extern int block_size_width;
 
 static const char power_letter[] =
 {
-  'b',	/* not used */
+  '\0',	/* not used */
   'K',	/* kibi ('k' for kilo is a special case) */
   'M',	/* mega or mebi */
   'G',	/* giga or gibi */
@@ -513,11 +513,12 @@ char *human_readable (int n, char *buf, int opts,int from_block_size, int to_blo
 	if (opts & human_autoscale) {
 		n=n*from_block_size;
 		int cn=n;
-		while( (cn) / 1024) {
+		while(cn/1024) {
 			++s;
 			n= (n+511)/1024;
 			cn = (cn+511) / 1024;
 		}
+		if (!s) t=0;
 	}
 	else
 		t=0;
