@@ -4,10 +4,10 @@
   .globl  _mysprintf
   .globl  _myprintf
 mystart:
-  			jsr 	_hello
-  			movel	d0,d2
-  			jsr		_bflush
-  			movel	d2,d0
+  			jsr 	_dl		| call main program
+  			movel	d0,d2	| preserve return value
+  			jsr		_bflush	| flush stdout
+  			movel	d2,d0	| restore return value to d0, where OS expects it
   			rts
 
 FLUSHONCR 	= 0		| 1--Flush stdout if last char is '\n', 0--Disable
@@ -116,7 +116,7 @@ scheck:		move.l	_SysBase,a6
 			move.l	#12,d1				|#define SIGBREAKB_CTRL_C   12
 			jsr		_LVOSetSignal(a6)
 			and.l	#1<<12,d0
-			move.l	d0,_gotBreak
+			move.l	d0,_gotBreak		| int gotBreak; declaration in dl.c
 			.endif
 			moveml	(sp)+,d2-d3/a6
 			rts

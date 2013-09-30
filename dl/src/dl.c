@@ -120,7 +120,7 @@ int windowHeight = 30;
 int nDirs, nFiles, nTotalSize, total_blocks;
 #define DOSLIB	"dos.library"
 #define DOSVER	33L			/* We require AT LEAST V33 of OS */
-int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
+int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 {
 	SysBase = (*((struct ExecBase **) 4));
 	if ((DOSBase = (struct DosLibrary *) OpenLibrary(DOSLIB, DOSVER))) {
@@ -213,7 +213,8 @@ int hello(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 							p = human_readable(total_blocks, buf,
 									human_output_opts,
 									ST_NBLOCKSIZE, output_block_size);
-							bprintf("%s\ntotal %s\n",thispend->name, p);
+							if (pending_dirs)bprintf("%s\n",thispend->name);
+							bprintf("total %s\n", p);
 
 						}
 						//bprintf("cwd_n_used = %ld\n",cwd_n_used);
