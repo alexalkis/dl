@@ -159,11 +159,14 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 							|| format == long_format) ?
 							DEREF_NEVER : DEREF_COMMAND_LINE_SYMLINK_TO_DIR);
 
+		//TODO: Recursion
+		//TODO: Handle the non-existant shell substitution of amiga's CLI
 		//this will be new
 		if (goon != -1) {
 			cliline = &cliline[goon];
 			arg = strtok(cliline, " ");
 			if (init_structures()) {
+				int seenMany=0;
 				do {
 					//Dir(arg);
 					gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
@@ -213,7 +216,9 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 							p = human_readable(total_blocks, buf,
 									human_output_opts,
 									ST_NBLOCKSIZE, output_block_size);
-							if (pending_dirs)bprintf("%s\n",thispend->name);
+							if (pending_dirs && !seenMany)
+								seenMany=1;
+							if (seenMany) bprintf("%s\n",thispend->name);
 							bprintf("total %s\n", p);
 
 						}

@@ -234,7 +234,7 @@ human_readable (uintmax_t n, char *buf, int opts,
   {
     /* Either the result cannot be computed easily using uintmax_t,
        or from_block_size is zero.  Fall back on floating point.
-       FIXME: This can yield answers that are slightly off.  */
+       FIX ME: This can yield answers that are slightly off.  */
 
     long double dto_block_size = to_block_size;
     long double damt = n * (from_block_size / dto_block_size);

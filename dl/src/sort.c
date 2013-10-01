@@ -585,7 +585,6 @@ size_t print_file_name_and_frills(const struct fileinfo *f, size_t start_col)
 		ST_NBLOCKSIZE, output_block_size);
 		bprintf("%s ", /*format == with_commas ? 0 : block_size_width,*/buf);
 	}
-	///TODO: add blocks and calc width
 	bprintf("%s%s%s", highlight_tab[f->fib.fib_DirEntryType].on,
 			f->fib.fib_FileName, highlight_tab[f->fib.fib_DirEntryType].off);
 

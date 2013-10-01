@@ -66,7 +66,7 @@ _i:
         .globl  _bprintf
 
 _bprintf:
-            moveml a2-a3/a6,-(sp)
+            moveml 	a2-a3/a6,-(sp)
             moveal  4*4(sp),a0
             lea   	5*4(sp),a1
 	    	lea     -MPIB(sp),sp		| allocate stack space for produced string
@@ -111,7 +111,7 @@ _bflush:	moveml	d2-d3/a6,-(sp)
 			clrl 	_i
 .len0:
 			.ifgt	CHECKCTRLC
-scheck:		move.l	_SysBase,a6
+scheck:	move.l	_SysBase,a6
 			moveql	#0,d0
 			move.l	#12,d1				|#define SIGBREAKB_CTRL_C   12
 			jsr		_LVOSetSignal(a6)
@@ -169,19 +169,19 @@ _myerror:
         .proc
         .globl  _realmalloc
 _realmalloc:
-		movem.l	d2/a6,-(sp)
-		addq.l	#4,d0			|Include sizeof(LONG)
-		move.l	d0,d2			|Copy to survive AllocMem
-		moveq	#0,d1			|MEMF_ANYTHING
-		move.l  _SysBase,a6
-        jsr     _LVOAllocMem(a6)|AllocMem(size + 4, 0L)
-		tst.l	d0				|Got it?
-	 	beq.s	1f
-		movea.l	d0,a6			|Copy pointer
-		move.l	d2,(a6)+		|Stash size in first 4 bytes
-		move.l	a6,d0			|return final pointer in d0
-1:		movem.l	(sp)+,d2/a6
-		rts
+			movem.l	d2/a6,-(sp)
+			addq.l	#4,d0			|Include sizeof(LONG)
+			move.l	d0,d2			|Copy to survive AllocMem
+			moveq	#0,d1			|MEMF_ANYTHING
+			move.l  _SysBase,a6
+	        jsr     _LVOAllocMem(a6)|AllocMem(size + 4, 0L)
+			tst.l	d0				|Got it?
+		 	beq.s	1f
+			movea.l	d0,a6			|Copy pointer
+			move.l	d2,(a6)+		|Stash size in first 4 bytes
+			move.l	a6,d0			|return final pointer in d0
+1:			movem.l	(sp)+,d2/a6
+			rts
 
 
 FREENULL = 0
