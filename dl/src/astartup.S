@@ -1,14 +1,19 @@
-  .text
-  .even
-  .globl  mystart
-  .globl  _mysprintf
-  .globl  _myprintf
+NEEDATEXIT=0		| make it 1 to enable the atexit function/logic
+
+			.text
+			.even
+			.globl  mystart
+			.globl  _mysprintf
+			.globl  _myprintf
 mystart:
-  			jsr 	_dl		| call main program
-  			movel	d0,d2	| preserve return value
-  			jsr		_bflush	| flush stdout
-  			movel	d2,d0	| restore return value to d0, where OS expects it
-  			rts
+			jsr 	_dl		| call main program
+			movel	d0,d2	| preserve return value
+			jsr		_bflush	| flush stdout
+			.ifgt NEEDATEXIT
+			jsr		callexits
+			.endif
+			movel	d2,d0	| restore return value to d0, where OS expects it
+			rts
 
 FLUSHONCR 	= 0		| 1--Flush stdout if last char is '\n', 0--Disable
 CHECKCTRLC 	= 0		| 1--Enable ctrl-c check on bflush, 0--Disable
@@ -36,7 +41,30 @@ _mysprintf:
             movem.l (sp)+,a2/a3/a6
             rts
 
+			.ifgt NEEDATEXIT
+			| Functions registered with atexit are called in reverse order
+			.globl  _atexit
+_atexit:	move.l	fpindex,d0
+			lea.l	fpexit,a1
+			move.l	a0,(a1,d0.l)
+			addq	#4,d0
+			move.l	d0,fpindex
+			rts
 
+callexits:
+			move.l	fpindex,d0
+			jeq		.noentries
+.el:		subq	#4,d0
+			lea.l	fpexit,a1
+			move.l	(a1,d0.l),a0
+			movem.l	d0/a1,-(sp)
+			jsr		(a0)
+			movem.l	(sp)+,d0/a1
+			tst.l	d0
+			jne		.el
+.noentries:	rts
+.lcomm 		fpexit,32*4
+			.endif
 _myprintf:
             moveml a2-a3/a6,-(sp)
             moveal  4*4(sp),a0
@@ -57,13 +85,13 @@ stuffChar:
             moveb  d0,(a3)+
             rts
 
-        .data
-        .even
-_i:
-        .long   0
-        .text
-        .even
-        .globl  _bprintf
+	        .data
+	        .even
+_i:        	.long   0
+fpindex: 	.long	0
+	        .text
+	        .even
+	        .globl  _bprintf
 
 _bprintf:
             moveml 	a2-a3/a6,-(sp)
@@ -93,7 +121,12 @@ str:    	moveb	(a3)+,d1
 keep:		lea	    MPIB(sp),sp	| deallocate buffer
             movem.l (sp)+,a2-a3/a6
             rts
-.lcomm _buffer,BUFFERSIZE+256
+
+
+.lcomm 		_buffer,BUFFERSIZE+MPIB
+
+
+
 
 |returnedLength =  Write( file, buffer, length )
 |    D0                       D1    D2      D3
@@ -184,12 +217,12 @@ _realmalloc:
 			rts
 
 
-FREENULL = 0
+ALLOWFREENULL = 0
 		.text
         .proc
         .globl  _realfree
 _realfree:
-		.ifgt FREENULL
+		.ifgt ALLOWFREENULL
 		tst.l	a0
 		jeq		.nof
 		.endif

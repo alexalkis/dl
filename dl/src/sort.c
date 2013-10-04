@@ -118,6 +118,7 @@ void shellSort(struct fileinfo **a, int n);
 
 void print_many_per_line(void);
 static void print_horizontal(void);
+size_t print_file_name_and_frills(const struct fileinfo *f, size_t start_col);
 size_t length_of_file_name_and_frills(const struct fileinfo *f);
 //node *theTree = NULL;
 
@@ -906,7 +907,7 @@ int gobble_file(char const *name, enum filetype type, long inode,
 			 an exit status of 2.  For other files, stat failure
 			 provokes an exit status of 1.  */
 			//file_failure (command_line_arg,_("cannot access %s"), absolute_name);
-			myerror("cannot access %s\n", absolute_name);
+			myerror("cannot access %s (%ld)\n", absolute_name,IoErr());
 			if (command_line_arg) {
 				if (ff)
 					myfree(ff);

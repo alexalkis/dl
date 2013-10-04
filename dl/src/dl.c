@@ -69,8 +69,8 @@ int ParseSwitches(char *filedir);
 #define VERSION_STRING "1.0"
 BYTE version[] = "\0$VER: dl " VERSION_STRING " (" __DATE__ ")";
 
-struct DosLibrary *DOSBase;
-struct ExecBase *SysBase;
+struct DosLibrary *DOSBase=NULL;
+struct ExecBase *SysBase=NULL;
 
 static struct DateStamp Now;
 int gotBreak = 0;
@@ -120,6 +120,7 @@ int windowHeight = 30;
 int nDirs, nFiles, nTotalSize, total_blocks;
 #define DOSLIB	"dos.library"
 #define DOSVER	33L			/* We require AT LEAST V33 of OS */
+
 int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 {
 	SysBase = (*((struct ExecBase **) 4));

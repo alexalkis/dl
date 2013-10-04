@@ -13,6 +13,7 @@
 /* Implemented in asm */
 char *realmalloc(register int n __asm("d0"));
 void  realfree(register char *mem __asm("a0"));
+void atexit(register void (*function)(void) __asm("a0"));
 void __stdargs mysprintf(char *buffer, char *fmt, ...);
 void __stdargs myprintf(char *fmt, ...);
 void __stdargs bprintf(char *fmt, ...);

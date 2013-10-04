@@ -150,6 +150,7 @@ int stricmp(char *str1, char *str2)
 	return (LONG) c1 - (LONG) c2;
 }
 
+/* Safe for overlaps */
 char *memcpy(char *dst, char *src, int size)
 {
 	register char *d;
@@ -176,10 +177,9 @@ char *memcpy(char *dst, char *src, int size)
 
 void fastmemcpy(long *dst, long *src, int len)
 {
-#ifdef DEBUGMEMORY
+	//WARNING: Not safe on overlaps
 	if (len & 3)
-		myprintf("Huh...weird len %ld\n", len);
-#endif
+		memcpy(dst,src,len);
 	len >>= 2;
 	while (len--)
 		*dst++ = *src++;
@@ -190,16 +190,14 @@ char *realloc(char *orig, int newsize)
 
 	char *new = mymalloc(newsize);
 	if (new) {
-		int *getsize = (int *) orig;
-		--getsize;	//decrease the pointer to go to saved size
-		//myprintf("Got %ld new bytes, old size was %ld\n",newsize,*getsize);
-		//fastmemcpy(new,orig,(*getsize)-4); //old size has the saved size in, so we subtract it
 		if (orig) {
-			memcpy(new, orig, (*getsize) - 4);
+			int *getsize = (int *) orig;
+			--getsize;	//decrease the pointer to go to saved size
+			fastmemcpy(new, orig, (*getsize) - 4);
 			myfree(orig);
 		}
 	} else {
-		myprintf("Realloc failed on %ld bytes.\n", newsize);
+		myerror("Realloc failed on %ld bytes.\n", newsize);
 	}
 	return new;
 }
@@ -227,3 +225,8 @@ void dfree(char *mem,char *function, char *file, int line)
 			(*getsize) - 4,sum,function, file, line);
 	return realfree(mem);
 }
+
+//#define NOTFINISHED
+#ifdef NOTFINISHED
+
+#endif
