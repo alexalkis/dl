@@ -488,12 +488,14 @@ human_options (char const *spec, int *opts, uintmax_t *block_size)
 #endif
 
 #include "human.h"
+//#include "stdio.h"
+//#include "strings.h"
 
 extern int block_size_width;
 
 static const char power_letter[] =
 {
-  '\0',	/* not used */
+  'b',	/* not used */
   'K',	/* kibi ('k' for kilo is a special case) */
   'M',	/* mega or mebi */
   'G',	/* giga or gibi */
@@ -504,12 +506,9 @@ static const char power_letter[] =
   'Y'	/* yotta or 2**80 */
 };
 
-void __stdargs mysprintf(char *buffer, char *fmt, ...);
 char *human_readable (int n, char *buf, int opts,int from_block_size, int to_block_size)
 {
-	static char fmt[]="%1ld";
 	int s=0;
-	int t=1;
 	if (opts & human_autoscale) {
 		n=n*from_block_size;
 		int cn=n;
@@ -518,17 +517,10 @@ char *human_readable (int n, char *buf, int opts,int from_block_size, int to_blo
 			n= (n+511)/1024;
 			cn = (cn+511) / 1024;
 		}
-		if (!s) t=0;
 	}
-	else
-		t=0;
+	//else
 
-	if (block_size_width)
-		fmt[1]=(block_size_width-t)+'0';
-
-	//myerror("\n--------->fmt=\"%s\" for n=%ld\n",fmt,n);
-	//workarround cause exec's rawdofmt doesn't support the '*' variable width
-	mysprintf(buf,fmt,n);
+	sprintf(buf,"%*d",block_size_width-1,n);
 	if (opts & human_autoscale) {
 		int len=strlen(buf);
 		buf[len]=power_letter[s];
