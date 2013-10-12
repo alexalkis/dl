@@ -420,7 +420,7 @@ int fwrite(const void *vbuf,size_t elmsize,size_t elms,BPTR fi)
 	return Write(fi,vbuf,elmsize*elms);
 }
 
-void puts(char *str)
+void puts(const char *str)
 {
 	int len = strlen(str);
 	write(str, len);

@@ -160,7 +160,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 							|| format == long_format) ?
 							DEREF_NEVER : DEREF_COMMAND_LINE_SYMLINK_TO_DIR);
 
-		//TODO: Recursion
+		//TODO: Recursion  (Initial code barely in, crashes...)
 		//TODO: Handle the non-existant shell substitution of amiga's CLI
 		//this will be new
 		if (goon != -1) {
@@ -240,19 +240,18 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 			}
 		}
 		printf("%s", highlight_cursor.on);
-		bflush();
 		CloseLibrary((struct Library * )DOSBase);
 		return 0;
 	}
 	return 20;
 }
 
-void showTotals(void)
-{
-	if (cwd_n_used)
-		printf("Files: %d Size: %d Blocks: %d  Directories: %d\n", nFiles,
-				nTotalSize, total_blocks, nDirs);
-}
+//void showTotals(void)
+//{
+//	if (cwd_n_used)
+//		printf("Files: %d Size: %d Blocks: %d  Directories: %d\n", nFiles,
+//				nTotalSize, total_blocks, nDirs);
+//}
 
 /* Parses the command line, acts on switches
  * Returns -1 for stop, else the position in cmdline that we should parse from
@@ -318,7 +317,7 @@ int ParseSwitches(char *filedir)
 								"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
 								"This is free software: you are free to change and redistribute it.\n"
 								"There is NO WARRANTY, to the extent permitted by law.\n"
-								"Written by Richard M. Stallman and David MacKenzie.\n");
+								"Written by Richard M. Stallman and David MacKenzie.\n\n");
 						return -1;
 					} else if (!strcmp(f + 1, "time=full")) {
 						gTimeDateFormat = TIMEDATE_FULL;
@@ -465,11 +464,11 @@ void TestBreak(void)
 	}
 }
 
-void myPutStr(char *str)
-{
-	int len = strlen(str);
-	Write(Output(), str, len);
-}
+//void myPutStr(char *str)
+//{
+//	int len = strlen(str);
+//	Write(Output(), str, len);
+//}
 
 char *dates(char *s, struct DateStamp *dss)
 {
@@ -505,14 +504,14 @@ char *dates(char *s, struct DateStamp *dss)
 			sprintf(s, "%10.10s", wd(year, month + 1, day + 1));
 	} else {
 		if (recent < 365) {
-			sprintf(s, "    %02ld %3s", day + 1, nm[month]);
+			sprintf(s, "    %02d %3s", day + 1, nm[month]);
 		} else if (recent < 2 * 365) {
-			sprintf(s, "%5s %4ld", nm[month], year);
+			sprintf(s, "%5s %4d", nm[month], year);
 		} else {
 			if (gTimeDateFormat == TIMEDATE_HUMAN)
-				sprintf(s, "%4ld years", recent / 365);
+				sprintf(s, "%4d years", recent / 365);
 			else
-				sprintf(s, "%02ld/%02ld/%04ld", day + 1, month + 1, year);
+				sprintf(s, "%02d/%02d/%04d", day + 1, month + 1, year);
 		}
 		//sprintf(s, "%02ld/%02ld/%04ld", day + 1, month + 1, year);
 	}
@@ -528,7 +527,14 @@ char *times(char *s, struct DateStamp *dss)
 	};
 	// @formatter:off
 	struct tzones zones[] =
-			{ { 7, 11, "morning" }, { 11, 13, "noon" }, { 13, 20, "afternoon" }, { 20, 23, "night" }, { 23, 23, "midnight" }, { 0, 0, "midnight" }, { 1, 3, "late night" }, { 3, 7, "early morn" } };
+			{ { 7, 11, "morning" },
+					{ 11, 13, "noon" },
+					{ 13, 20, "afternoon" },
+					{ 20, 23, "night" },
+					{ 23, 23, "midnight" },
+					{ 0, 0, "midnight" },
+					{ 1, 3, "late night" },
+					{ 3, 7, "early morn" } };
 	// @formatter:on
 	int hours, minutes, seconds;
 	int i;
@@ -544,10 +550,10 @@ char *times(char *s, struct DateStamp *dss)
 				break;
 		sprintf(s, "%-10.10s", zones[i].desc);
 	} else if (gTimeDateFormat == TIMEDATE_FULL)
-		sprintf(s, "%02ld:%02ld:%02ld.%02ld", hours, minutes, seconds,
+		sprintf(s, "%02d:%02d:%02d.%02d", hours, minutes, seconds,
 				2 * (dss->ds_Tick % TICKS_PER_SECOND));
 	else
-		sprintf(s, "%02ld:%02ld:%02ld", hours, minutes, seconds);
+		sprintf(s, "%02d:%02d:%02d", hours, minutes, seconds);
 	return (s);
 }
 

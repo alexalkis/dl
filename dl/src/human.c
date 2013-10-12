@@ -488,8 +488,8 @@ human_options (char const *spec, int *opts, uintmax_t *block_size)
 #endif
 
 #include "human.h"
-//#include "stdio.h"
-//#include "strings.h"
+#include "stdio.h"
+#include "strings.h"
 
 extern int block_size_width;
 
@@ -518,7 +518,6 @@ char *human_readable (int n, char *buf, int opts,int from_block_size, int to_blo
 			cn = (cn+511) / 1024;
 		}
 	}
-	//else
 
 	sprintf(buf,"%*d",block_size_width-1,n);
 	if (opts & human_autoscale) {
