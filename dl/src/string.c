@@ -210,6 +210,8 @@ char *realloc(char *orig, int newsize)
 	}
 	return new;
 }
+
+#ifdef DEBUGMEMORY
 //char *mymalloc(register int n __asm("d0"));
 char *dmalloc(int size,char *function, char *file, int line)
 {
@@ -217,7 +219,7 @@ char *dmalloc(int size,char *function, char *file, int line)
 	static int sum = 0;
 	++c;
 	sum += size;
-	myprintf("A: #%ld %ld/%ld %s %s, line %ld\n", c, size,sum,
+	myerror("A: #%ld %ld/%ld %s %s, line %ld\n", c, size,sum,
 			function,file, line);
 	return realmalloc(size);
 }
@@ -230,12 +232,8 @@ void dfree(char *mem,char *function, char *file, int line)
 	int *getsize = (int *) mem;
 	--getsize;
 	sum += ((*getsize) - 4);
-	myprintf("F: #%ld %ld/%ld %s %s, line %ld\n", c,
+	myerror("F: #%ld %ld/%ld %s %s, line %ld\n", c,
 			(*getsize) - 4,sum,function, file, line);
 	return realfree(mem);
 }
-
-//#define NOTFINISHED
-#ifdef NOTFINISHED
-
 #endif

@@ -5,8 +5,8 @@ CHECKCTRLC 	= 0		| 1--Enable ctrl-c check on bflush, 0--Disable
 			.text
 			.even
 			.globl  mystart
-			.globl  _mysprintf
-			.globl  _myprintf
+			|.globl  _mysprintf
+			|.globl  _myprintf
 mystart:
 			jsr 	_dl		| call main program
 			movel	d0,d2	| preserve return value
@@ -29,6 +29,7 @@ _LVOOutput 		=  -0x3c
 _LVOWrite 		=  -0x30
 _LVOSetSignal 	= -0x132
 
+/*
 _mysprintf:
             movem.l a2-a3/a6,-(sp)
 
@@ -41,7 +42,7 @@ _mysprintf:
 
             movem.l (sp)+,a2/a3/a6
             rts
-
+*/
 			.ifgt NEEDATEXIT
 			| Functions registered with atexit are called in reverse order
 			.globl  _atexit
@@ -66,6 +67,7 @@ callexits:
 .noentries:	rts
 .lcomm 		fpexit,32*4
 			.endif
+			/*
 _myprintf:
             moveml a2-a3/a6,-(sp)
             moveal  4*4(sp),a0
@@ -81,6 +83,7 @@ _myprintf:
             lea	    MPIB+4(sp),sp	| deallocate buffer and the parameter we pushed
             movem.l (sp)+,a2/a3/a6
             rts
+			*/
 
 stuffChar:
             moveb  d0,(a3)+
@@ -92,6 +95,7 @@ _i:        	.long   0
 fpindex: 	.long	0
 	        .text
 	        .even
+	        /*
 	        .globl  _bprintf
 
 _bprintf:
@@ -122,6 +126,7 @@ str:    	moveb	(a3)+,d1
 keep:		lea	    MPIB(sp),sp	| deallocate buffer
             movem.l (sp)+,a2-a3/a6
             rts
+            */
 .lcomm 		_buffer,BUFFERSIZE+MPIB
 
 
@@ -168,8 +173,8 @@ scheck:	move.l	_SysBase,a6
 
 			.text
         	.proc
-        	.globl  _bputchar
-_bputchar:
+        	.globl  _putchar
+_putchar:
 			move.l	_i,d0
 			lea		_buffer,a0
 			moveb	7(sp),(a0,d0:l)

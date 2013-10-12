@@ -214,7 +214,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		/* Insert a marker entry first.  When we dequeue this marker entry,
 		 we'll know that DIRNAME has been processed and may be removed
 		 from the set of active directories.  */
-		bprintf("queuing %s ...\n",dirname);
+		printf("queuing %s ...\n",dirname);
 		queue_directory(NULL, dirname, false);
 	}
 
@@ -226,13 +226,13 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		if (f->fib.fib_EntryType > 0) // (is_directory (f))
 				{
 			if (!dirname) {
-				bprintf("2. queuing \"%s\" ...command_line_arg=%s\n",dirname,command_line_arg ? "TRUE":"FALSE");
+				printf("2. queuing \"%s\" ...command_line_arg=%s\n",dirname,command_line_arg ? "TRUE":"FALSE");
 				queue_directory(f->fib.fib_FileName, 0, command_line_arg);
 			} else {
-				bprintf("--> %s  %s\n", dirname,f->fib.fib_FileName);
+				printf("--> %s  %s\n", dirname,f->fib.fib_FileName);
 				char *name = file_name_concat(dirname, f->fib.fib_FileName,
 				NULL);
-				bprintf("----------------------> %s\n", name);
+				printf("----------------------> %s\n", name);
 				queue_directory(name, 0, command_line_arg);
 				myfree(name);
 			}
@@ -250,7 +250,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		j += (f->fib.fib_DirEntryType != arg_directory);
 	}
 	cwd_n_used = j;
-	//bprintf("j=%ld\n",j);
+	//printf("j=%ld\n",j);
 }
 
 void free_ent(struct fileinfo *f)
@@ -300,7 +300,7 @@ void print_current_files(void)
 			displayFib(&((struct fileinfo *) sorted_file[i])->fib);
 			print_file_name_and_frills(
 					&((struct fileinfo *) sorted_file[i])->fib, 0);
-			bprintf("\n");
+			printf("\n");
 			bflush();
 		}
 		TestBreak();
@@ -531,10 +531,10 @@ static void indent(size_t from, size_t to)
 {
 	while (from < to) {
 		if (tabsize != 0 && to / tabsize > (from + 1) / tabsize) {
-			bprintf("\t");
+			printf("\t");
 			from += tabsize - from % tabsize;
 		} else {
-			bprintf(" ");
+			printf(" ");
 			from++;
 		}
 	}
@@ -570,7 +570,7 @@ void print_many_per_line(void)
 			indent(pos + name_length, pos + max_name_length);
 			pos += max_name_length;
 		}
-		bprintf("\n");
+		printf("\n");
 		bflush();
 		TestBreak();
 	}
@@ -584,9 +584,9 @@ size_t print_file_name_and_frills(const struct fileinfo *f, size_t start_col)
 	if (print_block_size) {
 		human_readable(f->fib.fib_NumBlocks, buf, human_output_opts,
 		ST_NBLOCKSIZE, output_block_size);
-		bprintf("%s ", /*format == with_commas ? 0 : block_size_width,*/buf);
+		printf("%s ", /*format == with_commas ? 0 : block_size_width,*/buf);
 	}
-	bprintf("%s%s%s", highlight_tab[f->fib.fib_DirEntryType].on,
+	printf("%s%s%s", highlight_tab[f->fib.fib_DirEntryType].on,
 			f->fib.fib_FileName, highlight_tab[f->fib.fib_DirEntryType].off);
 
 }
@@ -642,7 +642,7 @@ size_t calculate_columns(bool by_columns)
 
 char *umaxtostr(LONG num, char *buf)
 {
-	mysprintf(buf, "%ld", num);
+	sprintf(buf, "%d", num);
 	return buf;
 }
 
@@ -785,7 +785,7 @@ static void print_horizontal(void)
 		size_t col = filesno % cols;
 
 		if (col == 0) {
-			bprintf("\n");
+			printf("\n");
 			bflush();
 
 			pos = 0;
@@ -800,7 +800,7 @@ static void print_horizontal(void)
 		name_length = length_of_file_name_and_frills(f);
 		max_name_length = line_fmt->col_arr[col];
 	}
-	bprintf("\n");
+	printf("\n");
 	TestBreak();
 }
 
@@ -933,10 +933,10 @@ int gobble_file(char const *name, enum filetype type, long inode,
 		char buf[LONGEST_HUMAN_READABLE + 1];
 		int len = strlen(human_readable(blocks, buf, human_output_opts,
 		ST_NBLOCKSIZE, output_block_size));
-		//bprintf("clen=%ld Blocks:%ld  %s\n",len,blocks,buf);
+		//printf("clen=%ld Blocks:%ld  %s\n",len,blocks,buf);
 		if (block_size_width < len) {
 			block_size_width = len;
-			//bprintf("len=%ld\n",len);
+			//printf("len=%ld\n",len);
 		}
 	}
 	cwd_n_used++;

@@ -43,6 +43,7 @@
 #include <proto/exec.h>
 
 #include "string.h"
+#include "stdio.h"
 #include "sort.h"
 #include "pattern.h"
 #include "human.h"
@@ -139,14 +140,14 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		if (OSVersion == 13) {
 			highlight_tab = &highlight_tabx13[7];
 		}
-		bprintf("%s", highlight_cursor.off);
+		printf("%s", highlight_cursor.off);
 		cliline[linelen - 1] = '\0';
-		//bprintf("going in..,\n");bflush();
+		//printf("going in..,\n");bflush();
 		print_block_size = false;
 		print_dir_name=true;
 		format = many_per_line;
 		int goon = ParseSwitches(cliline);
-		//bprintf("got out..,\n");bflush();
+		//printf("got out..,\n");bflush();
 
 		format_needs_stat = sort_type == sort_time || sort_type == sort_size
 				|| format == long_format || print_block_size;
@@ -179,7 +180,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					/* 'cwd_n_used' might be zero now.  */
 					if (cwd_n_used) {
 						print_current_files();
-						//if (pending_dirs) bprintf("huh?%s\n",pending_dirs->realname);
+						//if (pending_dirs) printf("huh?%s\n",pending_dirs->realname);
 					}
 					struct pending *thispend;
 					while (pending_dirs) {
@@ -199,7 +200,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 							/* ASSERT_MATCHING_DEV_INO (thispend->realname, di); */
 							//assert (found);
 							//dev_ino_free (found);
-							//bprintf("free..\n");
+							//printf("free..\n");
 							free_pending_ent(thispend);
 							continue;
 						}
@@ -218,18 +219,18 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 									ST_NBLOCKSIZE, output_block_size);
 							if (pending_dirs && !seenMany)
 								seenMany=1;
-							if (seenMany) bprintf("%s\n",thispend->name);
-							bprintf("total %s\n", p);
+							if (seenMany) printf("%s\n",thispend->name);
+							printf("total %s\n", p);
 
 						}
-						//bprintf("cwd_n_used = %ld\n",cwd_n_used);
+						//printf("cwd_n_used = %ld\n",cwd_n_used);
 						if (cwd_n_used)
 							print_current_files();
 						//print_dir (thispend->name, thispend->realname,thispend->command_line_arg);
 
 						free_pending_ent(thispend);
 						print_dir_name = true;
-						if (pending_dirs) bprintf("\n");
+						if (pending_dirs) printf("\n");
 					}
 
 					clear_files();
@@ -238,7 +239,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 				free_structures();
 			}
 		}
-		bprintf("%s", highlight_cursor.on);
+		printf("%s", highlight_cursor.on);
 		bflush();
 		CloseLibrary((struct Library * )DOSBase);
 		return 0;
@@ -249,7 +250,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 void showTotals(void)
 {
 	if (cwd_n_used)
-		bprintf("Files: %ld Size: %ld Blocks: %ld  Directories: %ld\n", nFiles,
+		printf("Files: %d Size: %d Blocks: %d  Directories: %d\n", nFiles,
 				nTotalSize, total_blocks, nDirs);
 }
 
@@ -261,7 +262,7 @@ int ParseSwitches(char *filedir)
 	char *save = filedir;
 	int notSeenEnd;
 
-	//bprintf("Before switch parsing '%s'\n", filedir);bflush();
+	//printf("Before switch parsing '%s'\n", filedir);bflush();
 	while (*filedir) {
 		while (*filedir == ' ') //skip space
 			++filedir;
@@ -309,7 +310,7 @@ int ParseSwitches(char *filedir)
 					break;
 				case '-':
 					if (!strcmp(f + 1, "version")) {
-						myprintf(
+						printf(
 								"dl Version 1.0 (" __DATE__ ")\nWritten by Alex Argiropoulos\n\nUses fpattern 1.08, Copyright ©1997-1998 David R. Tribble\n"
 								"\nUses parts from:\n"
 								"ls (GNU coreutils) 8.13\n"
@@ -339,7 +340,7 @@ int ParseSwitches(char *filedir)
 			}
 			filedir = f;
 		} else {
-			//bprintf("final in parse: %s (%ld)\n", filedir, filedir - save);
+			//printf("final in parse: %s (%ld)\n", filedir, filedir - save);
 			return filedir - save;
 		}
 	}
@@ -370,14 +371,14 @@ void Dir(char *filedir)
 		return;
 	}
 
-	//bprintf("Dir: %s File: %s\n",dir,file);
+	//printf("Dir: %s File: %s\n",dir,file);
 	if (Examine(lock, &fib)) {
 
 		if (fib.fib_DirEntryType <= 0) {
 			strcpy(fib.fib_FileName, dir);
 			addEntry(&fib);
 		} else {
-			//if (strlen(filedir))bprintf("%s\n", filedir);
+			//if (strlen(filedir))printf("%s\n", filedir);
 			//myprintf("Directory of %s (%s):\n", fib.fib_FileName, dir);
 			while (ExNext(lock, &fib) && !gotBreak) {
 				TestBreak();
@@ -426,22 +427,22 @@ void displayFib(struct FileInfoBlock *fib)
 					str[0] = 'm';
 					str[1] = 'b';
 				}
-				bprintf("%5ld%s ", ds, str);
+				printf("%5ld%s ", ds, str);
 			} else
-				bprintf("%7ld ",
+				printf("%7ld ",
 						(gSize == SIZE_NORMAL) ?
 								fib->fib_Size : fib->fib_NumBlocks);
 		} else {
-			bprintf("%7s ", "[dir]");
+			printf("%7s ", "[dir]");
 		}
 		str[0] = (fib->fib_Protection & FIBF_READ) ? '-' : 'r';
 		str[1] = (fib->fib_Protection & FIBF_WRITE) ? '-' : 'w';
 		str[2] = (fib->fib_Protection & FIBF_EXECUTE) ? '-' : 'x';
 		str[3] = (fib->fib_Protection & FIBF_DELETE) ? '-' : 'd';
-		bprintf("%s %s ", dates(s, &fib->fib_Date), times(t, &fib->fib_Date));
+		printf("%s %s ", dates(s, &fib->fib_Date), times(t, &fib->fib_Date));
 
 		if (gTimeDateFormat != TIMEDATE_HUMAN)
-			bprintf("%s ", str);
+			printf("%s ", str);
 
 //		if (fib->fib_DirEntryType > 0)
 //			myPutStr("\x9b" "2m");
@@ -450,7 +451,7 @@ void displayFib(struct FileInfoBlock *fib)
 //			myPutStr("\x9b" "22m");
 //		myPutStr("\n");
 	} else {
-		bprintf("Code the short listing.\n");
+		printf("Code the short listing.\n");
 	}
 }
 
@@ -497,23 +498,23 @@ char *dates(char *s, struct DateStamp *dss)
 	int recent = Now.ds_Days - dss->ds_Days;
 	if (recent < 7) {
 		if (recent == 0)
-			mysprintf(s, "%10.10s", "Today");
+			sprintf(s, "%10.10s", "Today");
 		else if (recent == 1)
-			mysprintf(s, "%10.10s", "Yesterday");
+			sprintf(s, "%10.10s", "Yesterday");
 		else
-			mysprintf(s, "%10.10s", wd(year, month + 1, day + 1));
+			sprintf(s, "%10.10s", wd(year, month + 1, day + 1));
 	} else {
 		if (recent < 365) {
-			mysprintf(s, "    %02ld %3s", day + 1, nm[month]);
+			sprintf(s, "    %02ld %3s", day + 1, nm[month]);
 		} else if (recent < 2 * 365) {
-			mysprintf(s, "%5s %4ld", nm[month], year);
+			sprintf(s, "%5s %4ld", nm[month], year);
 		} else {
 			if (gTimeDateFormat == TIMEDATE_HUMAN)
-				mysprintf(s, "%4ld years", recent / 365);
+				sprintf(s, "%4ld years", recent / 365);
 			else
-				mysprintf(s, "%02ld/%02ld/%04ld", day + 1, month + 1, year);
+				sprintf(s, "%02ld/%02ld/%04ld", day + 1, month + 1, year);
 		}
-		//mysprintf(s, "%02ld/%02ld/%04ld", day + 1, month + 1, year);
+		//sprintf(s, "%02ld/%02ld/%04ld", day + 1, month + 1, year);
 	}
 	return (s);
 }
@@ -536,17 +537,17 @@ char *times(char *s, struct DateStamp *dss)
 	minutes = dss->ds_Minute;
 	hours = minutes / 60;
 	minutes %= 60;
-	//mysprintf(s, "%02ld:%02ld:%02ld", hours, minutes, seconds);
+	//sprintf(s, "%02ld:%02ld:%02ld", hours, minutes, seconds);
 	if (gTimeDateFormat == TIMEDATE_HUMAN) {
 		for (i = 0; i < sizeof(zones); ++i)
 			if (hours >= zones[i].from && hours <= zones[i].to)
 				break;
-		mysprintf(s, "%-10.10s", zones[i].desc);
+		sprintf(s, "%-10.10s", zones[i].desc);
 	} else if (gTimeDateFormat == TIMEDATE_FULL)
-		mysprintf(s, "%02ld:%02ld:%02ld.%02ld", hours, minutes, seconds,
+		sprintf(s, "%02ld:%02ld:%02ld.%02ld", hours, minutes, seconds,
 				2 * (dss->ds_Tick % TICKS_PER_SECOND));
 	else
-		mysprintf(s, "%02ld:%02ld:%02ld", hours, minutes, seconds);
+		sprintf(s, "%02ld:%02ld:%02ld", hours, minutes, seconds);
 	return (s);
 }
 
