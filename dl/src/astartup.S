@@ -125,7 +125,20 @@ keep:		lea	    MPIB(sp),sp	| deallocate buffer
 .lcomm 		_buffer,BUFFERSIZE+MPIB
 
 
-
+			.globl	_write
+_write:	move.l	8(sp),d1
+			move.l	4(sp),a0
+			move.l	_i,d0
+			lea.l	_buffer,a1
+			subq	#1,d1
+.lc:		moveb	(a0)+,(a1,d0.l)
+			addq	#1,d0
+			dbra	d1,.lc
+			move.l	d0,_i
+			cmpl	#BUFFERSIZE,d0	| can kill the system with a big write >256bytes
+			jle		.noov		| string, but I trust you.
+			bsr		_bflush
+.noov:		rts
 
 |returnedLength =  Write( file, buffer, length )
 |    D0                       D1    D2      D3

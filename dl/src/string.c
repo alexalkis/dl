@@ -45,6 +45,15 @@ void bzero(char *dest, int n)
 		*dest++ = 0;
 }
 
+void setmem(char *buf, int n, char c)
+{
+	int i;
+
+	for(i=0; i<n; ++i)
+		*buf++=c;
+}
+
+
 /*
  int strlen(const char *str)
  {
