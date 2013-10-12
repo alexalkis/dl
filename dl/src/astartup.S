@@ -1,4 +1,6 @@
-NEEDATEXIT=0		| make it 1 to enable the atexit function/logic
+NEEDATEXIT	= 0		| make it 1 to enable the atexit function/logic
+FLUSHONCR 	= 0		| 1--Flush stdout if last char is '\n', 0--Disable
+CHECKCTRLC 	= 0		| 1--Enable ctrl-c check on bflush, 0--Disable
 
 			.text
 			.even
@@ -15,8 +17,7 @@ mystart:
 			movel	d2,d0	| restore return value to d0, where OS expects it
 			rts
 
-FLUSHONCR 	= 0		| 1--Flush stdout if last char is '\n', 0--Disable
-CHECKCTRLC 	= 0		| 1--Enable ctrl-c check on bflush, 0--Disable
+
 
 BUFFERSIZE	= 4096
 MPIB		=  512	| Internal buffer for rawdofmt, lives on stack
@@ -29,10 +30,10 @@ _LVOWrite 		=  -0x30
 _LVOSetSignal 	= -0x132
 
 _mysprintf:
-            moveml a2-a3/a6,-(sp)
+            movem.l a2-a3/a6,-(sp)
 
-            moveal  4*4(sp),a3
-            moveal  5*4(sp),a0
+            move.l  4*4(sp),a3
+            move.l  5*4(sp),a0
             lea   	6*4(sp),a1
             lea.l   stuffChar(pc),a2
             move.l  _SysBase,a6
@@ -121,8 +122,6 @@ str:    	moveb	(a3)+,d1
 keep:		lea	    MPIB(sp),sp	| deallocate buffer
             movem.l (sp)+,a2-a3/a6
             rts
-
-
 .lcomm 		_buffer,BUFFERSIZE+MPIB
 
 

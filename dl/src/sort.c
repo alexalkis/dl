@@ -214,7 +214,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		/* Insert a marker entry first.  When we dequeue this marker entry,
 		 we'll know that DIRNAME has been processed and may be removed
 		 from the set of active directories.  */
-		//bprintf("queuing %s ...\n",dirname);
+		bprintf("queuing %s ...\n",dirname);
 		queue_directory(NULL, dirname, false);
 	}
 
@@ -226,13 +226,13 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		if (f->fib.fib_EntryType > 0) // (is_directory (f))
 				{
 			if (!dirname) {
-				//bprintf("2. queuing \"%s\" ...command_line_arg=%s\n",dirname,command_line_arg ? "TRUE":"FALSE");
+				bprintf("2. queuing \"%s\" ...command_line_arg=%s\n",dirname,command_line_arg ? "TRUE":"FALSE");
 				queue_directory(f->fib.fib_FileName, 0, command_line_arg);
 			} else {
-				//bprintf("--> %s  %s\n", dirname,f->fib.fib_FileName);
+				bprintf("--> %s  %s\n", dirname,f->fib.fib_FileName);
 				char *name = file_name_concat(dirname, f->fib.fib_FileName,
 				NULL);
-				//bprintf("----------------------> %s\n", name);
+				bprintf("----------------------> %s\n", name);
 				queue_directory(name, 0, command_line_arg);
 				myfree(name);
 			}
@@ -943,6 +943,24 @@ int gobble_file(char const *name, enum filetype type, long inode,
 	return f->fib.fib_NumBlocks;
 }
 
+//bool print_dir_name;
+//static int dired_pos;
+//#define DIRED_PUTCHAR(c) do {bputchar ((c)); ++dired_pos;} while (0)
+///* Write S to STREAM and increment DIRED_POS by S_LEN.  */
+//#define DIRED_FPUTS(s, stream, s_len) \
+//    do {fputs (s, stream); dired_pos += s_len;} while (0)
+//
+///* Like DIRED_FPUTS, but for use when S is a literal string.  */
+//#define DIRED_FPUTS_LITERAL(s, stream) \
+//    do {fputs (s, stream); dired_pos += sizeof (s) - 1;} while (0)
+//
+//#define DIRED_INDENT()							\
+//    do									\
+//      {									\
+//        if (dired)							\
+//          DIRED_FPUTS_LITERAL ("  ", stdout);				\
+//      }									\
+//    while (0)
 //
 //void print_dir (char const *name, char const *realname, bool command_line_arg)
 //{
@@ -959,35 +977,35 @@ int gobble_file(char const *name, enum filetype type, long inode,
 //      return;
 //    }
 //
-//  if (LOOP_DETECT)
-//    {
-//      struct stat dir_stat;
-//      int fd = dirfd (dirp);
-//
-//      /* If dirfd failed, endure the overhead of using stat.  */
-//      if ((0 <= fd
-//           ? fstat (fd, &dir_stat)
-//           : stat (name, &dir_stat)) < 0)
-//        {
-//          file_failure (command_line_arg,
-//                        _("cannot determine device and inode of %s"), name);
-//          closedir (dirp);
-//          return;
-//        }
-//
-//      /* If we've already visited this dev/inode pair, warn that
-//         we've found a loop, and do not process this directory.  */
-//      if (visit_dir (dir_stat.st_dev, dir_stat.st_ino))
-//        {
-//          error (0, 0, _("%s: not listing already-listed directory"),
-//                 quotearg_colon (name));
-//          closedir (dirp);
-//          set_exit_status (true);
-//          return;
-//        }
-//
-//      dev_ino_push (dir_stat.st_dev, dir_stat.st_ino);
-//    }
+////  if (LOOP_DETECT)
+////    {
+////      struct stat dir_stat;
+////      int fd = dirfd (dirp);
+////
+////      /* If dirfd failed, endure the overhead of using stat.  */
+////      if ((0 <= fd
+////           ? fstat (fd, &dir_stat)
+////           : stat (name, &dir_stat)) < 0)
+////        {
+////          file_failure (command_line_arg,
+////                        _("cannot determine device and inode of %s"), name);
+////          closedir (dirp);
+////          return;
+////        }
+////
+////      /* If we've already visited this dev/inode pair, warn that
+////         we've found a loop, and do not process this directory.  */
+////      if (visit_dir (dir_stat.st_dev, dir_stat.st_ino))
+////        {
+////          error (0, 0, _("%s: not listing already-listed directory"),
+////                 quotearg_colon (name));
+////          closedir (dirp);
+////          set_exit_status (true);
+////          return;
+////        }
+////
+////      dev_ino_push (dir_stat.st_dev, dir_stat.st_ino);
+////    }
 //
 //  if (recursive || print_dir_name)
 //    {

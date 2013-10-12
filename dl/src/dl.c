@@ -31,9 +31,6 @@
  ls 323096 (323 bpe)  	1.88s
  list					7.38s
  */
-
-//m68k-amigaos-gcc -Os -nostdlib -noixemul -fomit-frame-pointer -o hello  mystart.s hello.c
-//m68k-amigaos-gcc -Os -nostdlib -noixemul -fomit-frame-pointer -mregparm -o hello mystart.s hello.c
 #define __USE_SYSBASE
 
 #include <stdarg.h>
@@ -98,6 +95,7 @@ extern bool format_needs_stat;
 extern bool format_needs_type;
 extern bool print_block_size;
 extern bool print_with_color;
+extern bool print_dir_name;
 extern size_t cwd_n_used;
 extern size_t max_idx;
 extern enum indicator_style indicator_style;
@@ -145,6 +143,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		cliline[linelen - 1] = '\0';
 		//bprintf("going in..,\n");bflush();
 		print_block_size = false;
+		print_dir_name=true;
 		format = many_per_line;
 		int goon = ParseSwitches(cliline);
 		//bprintf("got out..,\n");bflush();
@@ -302,6 +301,9 @@ int ParseSwitches(char *filedir)
 				case 'x':
 					gDisplayMode = DISPLAY_HORIZONTAL;
 					break;
+				case 'R':
+					recursive = true;
+					break;
 				case 'X':
 					gSort = SORT_FILENAME_EXTENSION;
 					break;
@@ -399,6 +401,8 @@ void Dir(char *filedir)
 		myerror("Hmm, couldn't examine\nUse the Source Luke and fix it!\n");
 	}
 	UnLock(lock);
+	if (recursive)
+	    extract_dirs_from_files (filedir, false);
 }
 
 void displayFib(struct FileInfoBlock *fib)
