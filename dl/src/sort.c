@@ -70,6 +70,7 @@ int human_output_opts;
 int output_block_size;
 int file_human_output_opts;
 int file_output_block_size = 1;
+int line_length;
 
 enum indicator_style indicator_style;
 bool directories_first;
@@ -121,6 +122,7 @@ void print_many_per_line(void);
 static void print_horizontal(void);
 size_t print_file_name_and_frills(const struct fileinfo *f, size_t start_col);
 size_t length_of_file_name_and_frills(const struct fileinfo *f);
+void print_with_commas (void);
 //node *theTree = NULL;
 
 int init_structures(void)
@@ -285,6 +287,7 @@ void free_pending_ent(struct pending *pend)
 
 extern int gotBreak;
 
+/*
 void print_current_files(void)
 {
 	int i;
@@ -310,6 +313,48 @@ void print_current_files(void)
 	default:
 		break;
 	}
+}
+*/
+void
+print_current_files (void)
+{
+  int i;
+
+  switch (format)
+    {
+    case one_per_line:
+      for (i = 0; i < cwd_n_used; i++)
+        {
+          print_file_name_and_frills (sorted_file[i], 0);
+          putchar ('\n');
+        }
+      break;
+
+    case many_per_line:
+      print_many_per_line ();
+      break;
+
+    case horizontal:
+      print_horizontal ();
+      break;
+
+    case with_commas:
+      print_with_commas ();
+      break;
+
+    case long_format:
+      for (i = 0; !gotBreak && i < cwd_n_used; i++)
+        {
+          //set_normal_color ();
+          //print_long_format (sorted_file[i]);
+          //DIRED_PUTCHAR ('\n');
+    	  displayFib(&((struct fileinfo *) sorted_file[i])->fib);
+    	  			print_file_name_and_frills(sorted_file[i], 0);
+    	  			printf("\n");
+    	  			bflush();
+        }
+      break;
+    }
 }
 
 void addEntry(struct FileInfoBlock *fib)
@@ -548,6 +593,41 @@ static void indent(size_t from, size_t to)
 			from++;
 		}
 	}
+}
+
+void print_with_commas (void)
+{
+  size_t filesno;
+  size_t pos = 0;
+
+  for (filesno = 0; filesno < cwd_n_used; filesno++)
+    {
+      struct fileinfo const *f = sorted_file[filesno];
+      size_t len = length_of_file_name_and_frills (f);
+
+      if (filesno != 0)
+        {
+          char separator;
+
+          if (pos + len + 2 < line_length)
+            {
+              pos += 2;
+              separator = ' ';
+            }
+          else
+            {
+              pos = 0;
+              separator = '\n';
+            }
+
+          putchar (',');
+          putchar (separator);
+        }
+
+      print_file_name_and_frills (f, pos);
+      pos += len;
+    }
+  putchar ('\n');
 }
 
 void print_many_per_line(void)
@@ -1149,3 +1229,140 @@ int gobble_file(char const *name, enum filetype type, long inode,
 //  if (cwd_n_used)
 //    print_current_files ();
 //}
+
+
+/* Print information about F in long format.  */
+#ifdef EXPERIMENTAL
+static void
+print_long_format (const struct fileinfo *f)
+{
+  char modebuf[12];
+  char buf[80];
+  size_t s;
+  char *p;
+  struct timespec when_timespec;
+  struct tm *when_local;
+
+
+  p = buf;
+
+  if (print_inode)
+    {
+      char hbuf[16];
+      sprintf (p, "%*s ", inode_number_width,
+               format_inode (hbuf, sizeof hbuf, f));
+      /* Increment by strlen (p) here, rather than by inode_number_width + 1.
+         The latter is wrong when inode_number_width is zero.  */
+      p += strlen (p);
+    }
+
+  if (print_block_size)
+    {
+      char hbuf[16];
+      char const *blocks =human_readable (f->fib.fib_NumBlocks, hbuf, human_output_opts,
+                           ST_NBLOCKSIZE, output_block_size);
+      int pad;
+      for (pad = block_size_width - mbswidth (blocks, 0); 0 < pad; pad--)
+        *p++ = ' ';
+      while ((*p++ = *blocks++))
+        continue;
+      p[-1] = ' ';
+    }
+
+
+  /* Increment by strlen (p) here, rather than by, e.g.,
+     sizeof modebuf - 2 + any_has_acl + 1 + nlink_width + 1.
+     The latter is wrong when nlink_width is zero.  */
+  p += strlen (p);
+
+
+
+
+    {
+      char hbuf[32];
+      char const *size =human_readable (unsigned_file_size (f->fib.fib_Size),
+                           hbuf, file_human_output_opts, 1,
+                           file_output_block_size);
+      int pad;
+      for (pad = file_size_width - mbswidth (size, 0); 0 < pad; pad--)
+        *p++ = ' ';
+      while ((*p++ = *size++))
+        continue;
+      p[-1] = ' ';
+    }
+
+  when_local = localtime (&when_timespec.tv_sec);
+  s = 0;
+  *p = '\1';
+
+  if (f->stat_ok && when_local)
+    {
+      struct timespec six_months_ago;
+      bool recent;
+      char const *fmt;
+
+      /* If the file appears to be in the future, update the current
+         time, in case the file happens to have been modified since
+         the last time we checked the clock.  */
+      if (timespec_cmp (current_time, when_timespec) < 0)
+        {
+          /* Note that gettime may call gettimeofday which, on some non-
+             compliant systems, clobbers the buffer used for localtime's result.
+             But it's ok here, because we use a gettimeofday wrapper that
+             saves and restores the buffer around the gettimeofday call.  */
+          gettime (&current_time);
+        }
+
+      /* Consider a time to be recent if it is within the past six months.
+         A Gregorian year has 365.2425 * 24 * 60 * 60 == 31556952 seconds
+         on the average.  Write this value as an integer constant to
+         avoid floating point hassles.  */
+      six_months_ago.tv_sec = current_time.tv_sec - 31556952 / 2;
+      six_months_ago.tv_nsec = current_time.tv_nsec;
+
+      recent = (timespec_cmp (six_months_ago, when_timespec) < 0
+                && (timespec_cmp (when_timespec, current_time) < 0));
+      fmt = long_time_format[recent];
+
+      /* We assume here that all time zones are offset from UTC by a
+         whole number of seconds.  */
+      s = align_nstrftime (p, TIME_STAMP_LEN_MAXIMUM + 1, fmt,
+                           when_local, 0, when_timespec.tv_nsec);
+    }
+
+  if (s || !*p)
+    {
+      p += s;
+      *p++ = ' ';
+
+      /* NUL-terminate the string -- fputs (via DIRED_FPUTS) requires it.  */
+      *p = '\0';
+    }
+  else
+    {
+      /* The time cannot be converted using the desired format, so
+         print it as a huge integer number of seconds.  */
+      char hbuf[32];
+      sprintf (p, "%*s ", long_time_expected_width (),
+               timetostr (when_timespec.tv_sec, hbuf));
+      /* FIXME: (maybe) We discarded when_timespec.tv_nsec. */
+      p += strlen (p);
+    }
+
+  DIRED_FPUTS (buf, stdout, p - buf);
+  size_t w = print_name_with_quoting (f, false, &dired_obstack, p - buf);
+
+//  if (f->filetype == symbolic_link)
+//    {
+//      if (f->linkname)
+//        {
+//          DIRED_FPUTS_LITERAL (" -> ", stdout);
+//          print_name_with_quoting (f, true, NULL, (p - buf) + w + 4);
+//          if (indicator_style != none)
+//            print_type_indicator (true, f->linkmode, unknown);
+//        }
+//    }
+//  else if (indicator_style != none)
+//    print_type_indicator (f->stat_ok, f->stat.st_mode, f->filetype);
+}
+#endif

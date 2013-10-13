@@ -104,7 +104,7 @@ extern enum indicator_style indicator_style;
 extern bool directories_first;
 extern enum Dereference_symlink dereference;
 extern int human_output_opts;
-
+extern int line_length;
 extern int output_block_size;
 extern int file_human_output_opts;
 extern int file_output_block_size;
@@ -150,6 +150,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		print_inode = false;
 		print_dir_name = true;
 		format = many_per_line;
+		line_length=windowWidth;
 		int goon = ParseSwitches(cliline);
 		//printf("got out..,\n");bflush();
 
@@ -302,8 +303,12 @@ int ParseSwitches(char *filedir)
 					gTimeDateFormat = TIMEDATE_HUMAN;
 					break;
 				case 'l':
+					format = long_format;
 					gDisplayMode = DISPLAY_LONG;
 					break;
+				case 'm':
+				    format = with_commas;
+				    break;
 				case 's':
 					print_block_size = true;
 					//gSize = SIZE_BLOCKS;
