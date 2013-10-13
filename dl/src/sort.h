@@ -144,5 +144,5 @@ void free_pending_ent(struct pending *pend);
 
 void addFib(struct FileInfoBlock *fib);
 void displaySorted(int show);
-
+char *umaxtostr(LONG num, char *buf);
 #endif /* SORT_H_ */

@@ -4,6 +4,7 @@
  *  Created on: Sep 11, 2013
  *      Author: alex
  */
+#include "stdio.h"
 #include "sort.h"
 #include "human.h"
 #include "string.h"
@@ -214,7 +215,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		/* Insert a marker entry first.  When we dequeue this marker entry,
 		 we'll know that DIRNAME has been processed and may be removed
 		 from the set of active directories.  */
-		printf("queuing %s ...\n",dirname);
+		printf("queuing %s ...\n", dirname);
 		queue_directory(NULL, dirname, false);
 	}
 
@@ -226,10 +227,11 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		if (f->fib.fib_EntryType > 0) // (is_directory (f))
 				{
 			if (!dirname) {
-				printf("2. queuing \"%s\" ...command_line_arg=%s\n",dirname,command_line_arg ? "TRUE":"FALSE");
+				printf("2. queuing \"%s\" ...command_line_arg=%s\n", dirname,
+						command_line_arg ? "TRUE" : "FALSE");
 				queue_directory(f->fib.fib_FileName, 0, command_line_arg);
 			} else {
-				printf("--> %s  %s\n", dirname,f->fib.fib_FileName);
+				printf("--> %s  %s\n", dirname, f->fib.fib_FileName);
 				char *name = file_name_concat(dirname, f->fib.fib_FileName,
 				NULL);
 				printf("----------------------> %s\n", name);
@@ -298,8 +300,7 @@ void print_current_files(void)
 	case DISPLAY_LONG:
 		for (i = 0; !gotBreak && (i < cwd_n_used); i++) {
 			displayFib(&((struct fileinfo *) sorted_file[i])->fib);
-			print_file_name_and_frills(
-					&((struct fileinfo *) sorted_file[i])->fib, 0);
+			print_file_name_and_frills(sorted_file[i], 0);
 			printf("\n");
 			bflush();
 		}
@@ -362,6 +363,15 @@ void addEntry(struct FileInfoBlock *fib)
 			//if (print_block_size) myerror("print_block_size\n");
 		}
 	}
+
+	if (print_inode) {
+			char buf[16];
+			int len = strlen(umaxtostr(fib->fib_DiskKey, buf));
+			//myerror("len=%ld, width=%ld\n",len,inode_number_width);
+			if (inode_number_width < len)
+				inode_number_width = len;
+			//myerror("len=%ld, width=%ld\n",len,inode_number_width);
+		}
 }
 
 /* Returns pointer just past the '.' of the string when there is a . in string
@@ -576,15 +586,26 @@ void print_many_per_line(void)
 	}
 }
 
+static char * format_inode(char *buf, size_t buflen, const struct fileinfo *f)
+{
+
+	return (f->fib.fib_DiskKey != NOT_AN_INODE_NUMBER ?
+			umaxtostr(f->fib.fib_DiskKey, buf) : (char *) "?");
+}
 size_t print_file_name_and_frills(const struct fileinfo *f, size_t start_col)
 {
 	int i;
 	char buf[LONGEST_HUMAN_READABLE + 1];
 
+	//myerror("----> %ld %ld\n",inode_number_width,f->fib.fib_DiskKey);
+	if (print_inode)
+		printf("%*s ", format == with_commas ? 0 : inode_number_width,
+				format_inode(buf, sizeof buf, f));
 	if (print_block_size) {
-		human_readable(f->fib.fib_NumBlocks, buf, human_output_opts,
-		ST_NBLOCKSIZE, output_block_size);
-		printf("%s ", /*format == with_commas ? 0 : block_size_width,*/buf);
+		printf("%*s ", format == with_commas ? 0 : block_size_width,
+				human_readable(f->fib.fib_NumBlocks, buf, human_output_opts,
+				ST_NBLOCKSIZE, output_block_size));
+		//printf("%s ", /*format == with_commas ? 0 : block_size_width,*/buf);
 	}
 	printf("%s%s%s", highlight_tab[f->fib.fib_DirEntryType].on,
 			f->fib.fib_FileName, highlight_tab[f->fib.fib_DirEntryType].off);
@@ -907,7 +928,7 @@ int gobble_file(char const *name, enum filetype type, long inode,
 			 an exit status of 2.  For other files, stat failure
 			 provokes an exit status of 1.  */
 			//file_failure (command_line_arg,_("cannot access %s"), absolute_name);
-			myerror("cannot access %s (%ld)\n", absolute_name,IoErr());
+			myerror("cannot access %s (%ld)\n", absolute_name, IoErr());
 			if (command_line_arg) {
 				if (ff)
 					myfree(ff);
@@ -938,6 +959,14 @@ int gobble_file(char const *name, enum filetype type, long inode,
 			block_size_width = len;
 			//printf("len=%ld\n",len);
 		}
+	}
+	if (print_inode) {
+		char buf[16];
+		int len = strlen(umaxtostr(f->fib.fib_DiskKey, buf));
+		//myerror("len=%ld, width=%ld\n",len,inode_number_width);
+		if (inode_number_width < len)
+			inode_number_width = len;
+		//myerror("len=%ld, width=%ld\n",len,inode_number_width);
 	}
 	cwd_n_used++;
 	return f->fib.fib_NumBlocks;

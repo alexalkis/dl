@@ -155,8 +155,9 @@ _bflush:	moveml	d2-d3/a6,-(sp)
 			lea		_buffer,a0
 			move.l	a0,d2
 			move.l	_DOSBase,a6
-			jsr		_LVOOutput(a6)
-			move.l	d0,d1
+			|jsr		_LVOOutput(a6)
+			|move.l	d0,d1
+			move.l	_stdout,d1
 			jsr		_LVOWrite(a6)
 			clrl 	_i
 .len0:
@@ -203,7 +204,7 @@ _myerror:
             move.l  _SysBase,a6
             jsr     _LVORawDoFmt(a6)
             move.l	a3,d2			| buffer
-            move.l	_StdErr,d1		| fh - filehandle
+            move.l	_stderr,d1		| fh - filehandle
             moveql	#0,d3
 .e1:    	tst.b	(a3)+
             beq		.e2

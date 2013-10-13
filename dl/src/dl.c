@@ -1,16 +1,16 @@
 /*
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ============================================================================
  Name        : dl.c
  Author      : Alkis Argiropoulos
@@ -67,8 +67,8 @@ int ParseSwitches(char *filedir);
 #define VERSION_STRING "1.0"
 BYTE version[] = "\0$VER: dl " VERSION_STRING " (" __DATE__ ")";
 
-struct DosLibrary *DOSBase=NULL;
-struct ExecBase *SysBase=NULL;
+struct DosLibrary *DOSBase = NULL;
+struct ExecBase *SysBase = NULL;
 
 static struct DateStamp Now;
 int gotBreak = 0;
@@ -97,6 +97,7 @@ extern bool format_needs_type;
 extern bool print_block_size;
 extern bool print_with_color;
 extern bool print_dir_name;
+extern bool print_inode;
 extern size_t cwd_n_used;
 extern size_t max_idx;
 extern enum indicator_style indicator_style;
@@ -112,7 +113,8 @@ extern struct pending *pending_dirs;
 size_t tabsize = 8;
 extern struct highlight highlight_tabx13[13], *highlight_tab;
 int OSVersion;
-BPTR StdErr;
+BPTR stderr;
+BPTR stdout;
 struct highlight highlight_cursor = { "\x9b" " p", "\x9b" "0 p", 0 };
 int windowWidth = 77;
 int windowHeight = 30;
@@ -130,8 +132,9 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		max_idx = MAX(1, windowWidth / 3); //MIN_COLUMN_WIDTH);
 		OSVersion = (SysBase->LibNode.lib_Version > 34) ? 20 : 13;
 		struct Process *procp = (struct Process *) FindTask(0L);
-		StdErr =
+		stderr =
 				((struct CommandLineInterface *) BADDR(procp->pr_CLI))->cli_StandardOutput;
+		stdout = Output();
 		//struct CommandLineInterface *cli=((struct CommandLineInterface *)BADDR(procp->pr_CLI));
 //		myprintf("Commandname: %b\n",cli->cli_CommandName);
 //		myprintf("SetName: %b\n",cli->cli_SetName);
@@ -144,10 +147,12 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		cliline[linelen - 1] = '\0';
 		//printf("going in..,\n");bflush();
 		print_block_size = false;
-		print_dir_name=true;
+		print_inode = false;
+		print_dir_name = true;
 		format = many_per_line;
 		int goon = ParseSwitches(cliline);
 		//printf("got out..,\n");bflush();
+
 
 		format_needs_stat = sort_type == sort_time || sort_type == sort_size
 				|| format == long_format || print_block_size;
@@ -167,7 +172,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 			cliline = &cliline[goon];
 			arg = strtok(cliline, " ");
 			if (init_structures()) {
-				int seenMany=0;
+				int seenMany = 0;
 				do {
 					//Dir(arg);
 					gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
@@ -218,8 +223,9 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 									human_output_opts,
 									ST_NBLOCKSIZE, output_block_size);
 							if (pending_dirs && !seenMany)
-								seenMany=1;
-							if (seenMany) printf("%s\n",thispend->name);
+								seenMany = 1;
+							if (seenMany)
+								printf("%s\n", thispend->name);
 							printf("total %s\n", p);
 
 						}
@@ -230,7 +236,8 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 
 						free_pending_ent(thispend);
 						print_dir_name = true;
-						if (pending_dirs) printf("\n");
+						if (pending_dirs)
+							printf("\n");
 					}
 
 					clear_files();
@@ -281,6 +288,9 @@ int ParseSwitches(char *filedir)
 					break;
 				case 't':
 					gSort = SORT_DATE;
+					break;
+				case 'i':
+					print_inode = true;
 					break;
 				case 'f':
 					gSort = SORT_NONE;
@@ -402,7 +412,7 @@ void Dir(char *filedir)
 	}
 	UnLock(lock);
 	if (recursive)
-	    extract_dirs_from_files (filedir, false);
+		extract_dirs_from_files(filedir, false);
 }
 
 void displayFib(struct FileInfoBlock *fib)
@@ -527,14 +537,7 @@ char *times(char *s, struct DateStamp *dss)
 	};
 	// @formatter:off
 	struct tzones zones[] =
-			{ { 7, 11, "morning" },
-					{ 11, 13, "noon" },
-					{ 13, 20, "afternoon" },
-					{ 20, 23, "night" },
-					{ 23, 23, "midnight" },
-					{ 0, 0, "midnight" },
-					{ 1, 3, "late night" },
-					{ 3, 7, "early morn" } };
+			{ { 7, 11, "morning" }, { 11, 13, "noon" }, { 13, 20, "afternoon" }, { 20, 23, "night" }, { 23, 23, "midnight" }, { 0, 0, "midnight" }, { 1, 3, "late night" }, { 3, 7, "early morn" } };
 	// @formatter:on
 	int hours, minutes, seconds;
 	int i;
