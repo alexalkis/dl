@@ -12,15 +12,19 @@
  *  this.  The same PFMT is in C.LIB as is in ROM.LIB
  */
 
+/*
+ * Basically, we need this instead of Exec's RawDoFmt cause of the '*' format variable width specifier
+ * Adds 2620 bytes (.o size) :-(
+ * Taken from the dice src distribution (if the original top comment wasn't clear enough :P)
+ * No float support.
+ */
 #include <stdarg.h>
 #include <dos/dos.h>
 #include <proto/dos.h>
+#include "stdio.h"
 #include "string.h"
 
 typedef unsigned long size_t;
-BPTR	stderr;
-BPTR	stdout;
-
 #define F_SPAC	    1
 #define F_PLUS	    2
 #define F_MINUS     4
@@ -199,7 +203,6 @@ int _pfmtone(char c, va_list *pva,
 			i2 = 1;
 		for (len = 0; len < sizeof(buf) && (len < i2 || v); ++len) {
 			buf[sizeof(buf) - 1 - len] = v % base + '0';
-			//bprintf("'%lc' %ld %ld %ld\n",buf[sizeof(buf) - 1 - len],v,base, v % base);bflush();
 			v = v / base;
 		}
 		value = buf + sizeof(buf) - len;
@@ -397,6 +400,7 @@ int _pfmtone(char c, va_list *pva,
 
 /*
  * vfwrite is a special write just for printf (buffered)
+ * (Only stdout is buffered in astartup.S)
  */
 static int vfwrite(const void *vbuf,size_t elmsize,size_t elms,BPTR fi)
 {

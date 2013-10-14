@@ -2,21 +2,56 @@ NEEDATEXIT	= 0		| make it 1 to enable the atexit function/logic
 FLUSHONCR 	= 0		| 1--Flush stdout if last char is '\n', 0--Disable
 CHECKCTRLC 	= 0		| 1--Enable ctrl-c check on bflush, 0--Disable
 
+			.macro SYS function
+				jsr	(_LVO\function).W(a6)
+			.endm
+
 			.text
 			.even
 			.globl  mystart
 			|.globl  _mysprintf
 			|.globl  _myprintf
 mystart:
+			move.l	d0,d2
+			move.l	a0,a2
+			move.l	0x04.w,a6
+			move.l	a6,_SysBase
+			sub.l	a1,a1
+			SYS		FindTask
+			move.l	d0,a5		| a5 will hold this Task/Process
+			move.l	d0,a4		| a4 copy to reach stderr
+			lea.l	_dosname,a1
+			moveq	#33,d0
+			SYS		OpenLibrary
+			move.l	d0,_DOSBase
+			jeq		.nodos
+			move.l	d0,a6
+			move.l	pr_WindowPtr.W(a5),OldWindowPtr
+			move.l	#-1,pr_WindowPtr.W(a5)
+			SYS		Output
+			move.l	d0,_stdout
+			SYS		Input
+			move.l	d0,_stdin
+			move.l	pr_CLI.W(a4),a4
+			adda.l	a4,a4				| normal pointer = 4 * BPTR
+			adda.l	a4,a4
+			move.l	cli_StandardOutput.W(a4),_stderr
+
+			move.l	d2,d0	|restore cmd line arguments, len at d0
+			move.l	a2,a0	| actual argument (as one string) in a0
 			jsr 	_dl		| call main program
 			movel	d0,d2	| preserve return value
+			move.l	OldWindowPtr,pr_WindowPtr.W(a5)
 			jsr		_bflush	| flush stdout
 			.ifgt NEEDATEXIT
 			jsr		callexits
 			.endif
 			movel	d2,d0	| restore return value to d0, where OS expects it
 			rts
-
+.nodos:		moveq	#20,d0
+			rts
+			| although I don't CloseLibrary the dos.library, seems that there is no memory leak
+			|
 
 
 BUFFERSIZE	= 4096
@@ -89,10 +124,23 @@ stuffChar:
             moveb  d0,(a3)+
             rts
 
+			.global _SysBase
+			.global _DOSBase
+			.global _stdout
+			.global _stdin
+			.global _stderr
 	        .data
 	        .even
-_i:        	.long   0
-fpindex: 	.long	0
+_dosname:	.asciz "dos.library"
+	        .even
+_SysBase:	.long 0
+_DOSBase:	.long 0
+_stdout:	.long 0
+_stdin:	.long 0
+_stderr:	.long 0
+OldWindowPtr: .long 0
+_i:        	.long 0
+fpindex: 	.long 0
 	        .text
 	        .even
 	        /*
@@ -412,3 +460,26 @@ ___umodsi3:
         subl    d0, d1          /* d1 = a - (a/b)*b */
         movel   d1, d0
         rts
+
+_LVOFindTask 	= -0x126
+_LVOOpenLibrary = -0x228
+_LVOAllocMem	= -0xc6
+_LVOFreeMem		= -210
+_LVOAlert		= -108
+_LVOWaitPort	= -384
+_LVOGetMsg		= -372
+_LVOReplyMsg	= -378
+_LVOCloseLibrary= -414
+_LVOForbid		= -132
+_LVORawDoFmt 	= -522
+
+_LVOWrite 		= -0x30
+_LVOInput		= -0x36
+_LVOOutput 		= -0x3c
+
+pr_CLI	 		= 172
+pr_ReturnAddr 	= 176
+pr_MsgPort 		= 92
+cli_CommandName = 16
+pr_WindowPtr	= 184
+cli_StandardOutput = 56

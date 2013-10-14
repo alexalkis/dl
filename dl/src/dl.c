@@ -50,12 +50,12 @@
 
 void GetWinBounds(register int *w __asm("a0"), register int *h __asm("a1"));
 
-void myPutStr(char *str);
+
 char *dates(char *s, struct DateStamp *dss);
 char *times(char *s, struct DateStamp *dss);
 const char *wd(int year, int month, int day);
 
-void showTotals(void);
+
 void Dir(char *filedir);
 void displayFib(struct FileInfoBlock *fib);
 
@@ -67,8 +67,8 @@ int ParseSwitches(char *filedir);
 #define VERSION_STRING "1.0"
 BYTE version[] = "\0$VER: dl " VERSION_STRING " (" __DATE__ ")";
 
-struct DosLibrary *DOSBase = NULL;
-struct ExecBase *SysBase = NULL;
+extern struct DosLibrary *DOSBase;
+extern struct ExecBase *SysBase;
 
 static struct DateStamp Now;
 int gotBreak = 0;
@@ -113,145 +113,143 @@ extern struct pending *pending_dirs;
 size_t tabsize = 8;
 extern struct highlight highlight_tabx13[13], *highlight_tab;
 int OSVersion;
-BPTR stderr;
-BPTR stdout;
+
+//extern APTR OldWindowPtr;
+
 struct highlight highlight_cursor = { "\x9b" " p", "\x9b" "0 p", 0 };
 int windowWidth = 77;
 int windowHeight = 30;
 int nDirs, nFiles, nTotalSize, total_blocks;
-#define DOSLIB	"dos.library"
-#define DOSVER	33L			/* We require AT LEAST V33 of OS */
+
+
 
 int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 {
-	SysBase = (*((struct ExecBase **) 4));
-	if ((DOSBase = (struct DosLibrary *) OpenLibrary(DOSLIB, DOSVER))) {
-		DateStamp(&Now);
-		char *arg;
-		GetWinBounds(&windowWidth, &windowHeight);
-		max_idx = MAX(1, windowWidth / 3); //MIN_COLUMN_WIDTH);
-		OSVersion = (SysBase->LibNode.lib_Version > 34) ? 20 : 13;
-		struct Process *procp = (struct Process *) FindTask(0L);
-		stderr =
-				((struct CommandLineInterface *) BADDR(procp->pr_CLI))->cli_StandardOutput;
-		stdout = Output();
-		//struct CommandLineInterface *cli=((struct CommandLineInterface *)BADDR(procp->pr_CLI));
+	DateStamp(&Now);
+	char *arg;
+	GetWinBounds(&windowWidth, &windowHeight);
+	max_idx = MAX(1, windowWidth / 3); //MIN_COLUMN_WIDTH);
+	OSVersion = (SysBase->LibNode.lib_Version > 34) ? 20 : 13;
+//	struct Process *procp = (struct Process *) FindTask(0L);
+//	OldWindowPtr = procp->pr_WindowPtr;
+//	procp->pr_WindowPtr = (APTR) -1L; /* Shutdown requesters */
+//	stderr =
+//			((struct CommandLineInterface *) BADDR(procp->pr_CLI))->cli_StandardOutput;
+
+
+	//struct CommandLineInterface *cli=((struct CommandLineInterface *)BADDR(procp->pr_CLI));
 //		myprintf("Commandname: %b\n",cli->cli_CommandName);
 //		myprintf("SetName: %b\n",cli->cli_SetName);
 //		myprintf("Prompt: %b\n",cli->cli_Prompt);
 //		myprintf("CommandFile: %b\n",cli->cli_CommandFile);
-		if (OSVersion == 13) {
-			highlight_tab = &highlight_tabx13[7];
-		}
-		printf("%s", highlight_cursor.off);
-		cliline[linelen - 1] = '\0';
-		//printf("going in..,\n");bflush();
-		print_block_size = false;
-		print_inode = false;
-		print_dir_name = true;
-		format = many_per_line;
-		line_length=windowWidth;
-		int goon = ParseSwitches(cliline);
-		//printf("got out..,\n");bflush();
-
-
-		format_needs_stat = sort_type == sort_time || sort_type == sort_size
-				|| format == long_format || print_block_size;
-		format_needs_type = (!format_needs_stat
-				&& (recursive || print_with_color || indicator_style != none
-						|| directories_first));
-		if (dereference == DEREF_UNDEFINED)
-			dereference = (
-					(immediate_dirs || indicator_style == classify
-							|| format == long_format) ?
-							DEREF_NEVER : DEREF_COMMAND_LINE_SYMLINK_TO_DIR);
-
-		//TODO: Recursion  (Initial code barely in, crashes...)
-		//TODO: Handle the non-existant shell substitution of amiga's CLI
-		//this will be new
-		if (goon != -1) {
-			cliline = &cliline[goon];
-			arg = strtok(cliline, " ");
-			if (init_structures()) {
-				int seenMany = 0;
-				do {
-					//Dir(arg);
-					gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
-					//queue_directory ("/", NULL, true);
-				} while ((arg = strtok(NULL, " ")) && !gotBreak);
-				if (cwd_n_used) {
-					sort_files();
-					if (!immediate_dirs)
-						extract_dirs_from_files(NULL, true);
-					/* 'cwd_n_used' might be zero now.  */
-					if (cwd_n_used) {
-						print_current_files();
-						//if (pending_dirs) printf("huh?%s\n",pending_dirs->realname);
-					}
-					struct pending *thispend;
-					while (pending_dirs) {
-
-						thispend = pending_dirs;
-						pending_dirs = pending_dirs->next;
-
-						//if (LOOP_DETECT)
-						//{
-						if (thispend->name == NULL) {
-							/* thispend->name == NULL means this is a marker entry
-							 indicating we've finished processing the directory.
-							 Use its dev/ino numbers to remove the corresponding
-							 entry from the active_dir_set hash table.  */
-							//struct dev_ino di = dev_ino_pop ();
-							//struct dev_ino *found = hash_delete (active_dir_set, &di);
-							/* ASSERT_MATCHING_DEV_INO (thispend->realname, di); */
-							//assert (found);
-							//dev_ino_free (found);
-							//printf("free..\n");
-							free_pending_ent(thispend);
-							continue;
-						}
-						//}
-						//myprintf("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
-						clear_files();
-
-						Dir(thispend->name);
-						/* Sort the directory contents.  */
-						sort_files();
-						if (format == long_format || print_block_size) {
-							const char *p;
-							char buf[LONGEST_HUMAN_READABLE + 1];
-							p = human_readable(total_blocks, buf,
-									human_output_opts,
-									ST_NBLOCKSIZE, output_block_size);
-							if (pending_dirs && !seenMany)
-								seenMany = 1;
-							if (seenMany)
-								printf("%s\n", thispend->name);
-							printf("total %s\n", p);
-
-						}
-						//printf("cwd_n_used = %ld\n",cwd_n_used);
-						if (cwd_n_used)
-							print_current_files();
-						//print_dir (thispend->name, thispend->realname,thispend->command_line_arg);
-
-						free_pending_ent(thispend);
-						print_dir_name = true;
-						if (pending_dirs)
-							printf("\n");
-					}
-
-					clear_files();
-				}
-				//} while ((arg = strtok(NULL, " ")) && !gotBreak);
-				free_structures();
-			}
-		}
-		printf("%s", highlight_cursor.on);
-		CloseLibrary((struct Library * )DOSBase);
-		return 0;
+	if (OSVersion == 13) {
+		highlight_tab = &highlight_tabx13[7];
 	}
-	return 20;
+	printf("%s", highlight_cursor.off);
+	cliline[linelen - 1] = '\0';
+	//printf("going in..,\n");bflush();
+	print_block_size = false;
+	print_inode = false;
+	print_dir_name = true;
+	format = many_per_line;
+	line_length = windowWidth;
+	int goon = ParseSwitches(cliline);
+	//printf("got out..,\n");bflush();
+
+	format_needs_stat = sort_type == sort_time || sort_type == sort_size
+			|| format == long_format || print_block_size;
+	format_needs_type = (!format_needs_stat
+			&& (recursive || print_with_color || indicator_style != none
+					|| directories_first));
+	if (dereference == DEREF_UNDEFINED)
+		dereference = (
+				(immediate_dirs || indicator_style == classify
+						|| format == long_format) ?
+						DEREF_NEVER : DEREF_COMMAND_LINE_SYMLINK_TO_DIR);
+
+	//TODO: Recursion  (Initial code barely in, crashes...)
+	//TODO: Handle the non-existant shell substitution of amiga's CLI
+	//this will be new
+	if (goon != -1) {
+		cliline = &cliline[goon];
+		arg = strtok(cliline, " ");
+		if (init_structures()) {
+			int seenMany = 0;
+			do {
+				//Dir(arg);
+				gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
+				//queue_directory ("/", NULL, true);
+			} while ((arg = strtok(NULL, " ")) && !gotBreak);
+			if (cwd_n_used) {
+				sort_files();
+				if (!immediate_dirs)
+					extract_dirs_from_files(NULL, true);
+				/* 'cwd_n_used' might be zero now.  */
+				if (cwd_n_used) {
+					print_current_files();
+					//if (pending_dirs) printf("huh?%s\n",pending_dirs->realname);
+				}
+				struct pending *thispend;
+				while (pending_dirs) {
+
+					thispend = pending_dirs;
+					pending_dirs = pending_dirs->next;
+
+					//if (LOOP_DETECT)
+					//{
+					if (thispend->name == NULL) {
+						/* thispend->name == NULL means this is a marker entry
+						 indicating we've finished processing the directory.
+						 Use its dev/ino numbers to remove the corresponding
+						 entry from the active_dir_set hash table.  */
+						//struct dev_ino di = dev_ino_pop ();
+						//struct dev_ino *found = hash_delete (active_dir_set, &di);
+						/* ASSERT_MATCHING_DEV_INO (thispend->realname, di); */
+						//assert (found);
+						//dev_ino_free (found);
+						//printf("free..\n");
+						free_pending_ent(thispend);
+						continue;
+					}
+					//}
+					//myprintf("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
+					clear_files();
+
+					Dir(thispend->name);
+					/* Sort the directory contents.  */
+					sort_files();
+					if (format == long_format || print_block_size) {
+						const char *p;
+						char buf[LONGEST_HUMAN_READABLE + 1];
+						p = human_readable(total_blocks, buf, human_output_opts,
+						ST_NBLOCKSIZE, output_block_size);
+						if (pending_dirs && !seenMany)
+							seenMany = 1;
+						if (seenMany)
+							printf("%s\n", thispend->name);
+						printf("total %s\n", p);
+
+					}
+					//printf("cwd_n_used = %ld\n",cwd_n_used);
+					if (cwd_n_used)
+						print_current_files();
+					//print_dir (thispend->name, thispend->realname,thispend->command_line_arg);
+
+					free_pending_ent(thispend);
+					print_dir_name = true;
+					if (pending_dirs)
+						printf("\n");
+				}
+
+				clear_files();
+			}
+			//} while ((arg = strtok(NULL, " ")) && !gotBreak);
+			free_structures();
+		}
+	}
+	printf("%s", highlight_cursor.on);
+//	procp->pr_WindowPtr = OldWindowPtr;
+	return 0;
 }
 
 //void showTotals(void)
@@ -307,8 +305,8 @@ int ParseSwitches(char *filedir)
 					gDisplayMode = DISPLAY_LONG;
 					break;
 				case 'm':
-				    format = with_commas;
-				    break;
+					format = with_commas;
+					break;
 				case 's':
 					print_block_size = true;
 					//gSize = SIZE_BLOCKS;
@@ -441,9 +439,9 @@ void displayFib(struct FileInfoBlock *fib)
 					str[0] = 'm';
 					str[1] = 'b';
 				}
-				printf("%5ld%s ", ds, str);
+				printf("%5d%s ", ds, str);
 			} else
-				printf("%7ld ",
+				printf("%7d ",
 						(gSize == SIZE_NORMAL) ?
 								fib->fib_Size : fib->fib_NumBlocks);
 		} else {
