@@ -323,7 +323,7 @@ int ParseSwitches(char *filedir)
 				case '-':
 					if (!strcmp(f + 1, "version")) {
 						printf(
-								"dl Version 1.0 (" __DATE__ ")\nWritten by Alex Argiropoulos\n\nUses fpattern 1.08, Copyright ©1997-1998 David R. Tribble\n"
+								"dl Version 1.0 (" __DATE__ ")\nWritten by Alex Argiropoulos\n\nUses fpattern 1.08, Copyright (C) 1997-1998 David R. Tribble\n"
 								"\nUses parts from:\n"
 								"ls (GNU coreutils) 8.13\n"
 								"Copyright (C) 2011 Free Software Foundation, Inc.\n"

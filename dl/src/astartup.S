@@ -1,6 +1,6 @@
 NEEDATEXIT	= 0		| make it 1 to enable the atexit function/logic
-FLUSHONCR 	= 0		| 1--Flush stdout if last char is '\n', 0--Disable
-CHECKCTRLC 	= 0		| 1--Enable ctrl-c check on bflush, 0--Disable
+FLUSHONCR 	= 0		| 1--Flush stdout if last char is '\n', 0--Disable NEEDS REDESIGN
+CHECKCTRLC 	= 1		| 1--Enable ctrl-c check on bflush, 0--Disable
 
 			.macro SYS function
 				jsr	(_LVO\function).W(a6)
@@ -42,9 +42,9 @@ mystart:
 			jsr 	_dl		| call main program
 			movel	d0,d2	| preserve return value
 			move.l	OldWindowPtr,pr_WindowPtr.W(a5)
-			jsr		_bflush	| flush stdout
+			jbsr	_bflush	| flush stdout
 			.ifgt NEEDATEXIT
-			jsr		callexits
+			jbsr	callexits
 			.endif
 			movel	d2,d0	| restore return value to d0, where OS expects it
 			rts
@@ -130,8 +130,7 @@ stuffChar:
 			.global _stdin
 			.global _stderr
 	        .data
-	        .even
-_dosname:	.asciz "dos.library"
+
 	        .even
 _SysBase:	.long 0
 _DOSBase:	.long 0
@@ -139,6 +138,10 @@ _stdout:	.long 0
 _stdin:	.long 0
 _stderr:	.long 0
 OldWindowPtr: .long 0
+_dosname:	.asciz "dos.library"
+			.even
+
+
 _i:        	.long 0
 fpindex: 	.long 0
 	        .text
@@ -182,42 +185,47 @@ keep:		lea	    MPIB(sp),sp	| deallocate buffer
 _write:	move.l	8(sp),d1
 			move.l	4(sp),a0
 			move.l	_i,d0
+			add.w	d1,d0
+			cmp.w	#BUFFERSIZE,d0
+			jle		.nofl
+			jbsr	_bflush
+.nofl:		move.l	_i,d0
 			lea.l	_buffer,a1
 			subq	#1,d1
 .lc:		moveb	(a0)+,(a1,d0.l)
 			addq	#1,d0
 			dbra	d1,.lc
 			move.l	d0,_i
-			cmpl	#BUFFERSIZE,d0	| can kill the system with a big write >256bytes
-			jle		.noov		| string, but I trust you.
-			bsr		_bflush
+			subq	#1,d0
+			cmp.b	#'\n',(a1,d0.l)	| can kill the system with a big write >256bytes
+			jne		.noov		| string, but I trust you.
+			jbsr	_bflush
 .noov:		rts
 
 |returnedLength =  Write( file, buffer, length )
 |    D0                       D1    D2      D3
 |additonaly, check for ctrl-c and set global 'gotBreak' to non-zero upon ctrl-c
 			.globl  _bflush
-_bflush:	moveml	d2-d3/a6,-(sp)
+			| normally we wouldn't save D1, but 'write' needs that
+_bflush:	moveml	d1-d3/a6,-(sp)
 			move.l	_i,d3			| if len is zero nothing to flush
-			beq		.len0			| just check for ctrl-c
+			jeq		.len0			| just check for ctrl-c
 			lea		_buffer,a0
 			move.l	a0,d2
 			move.l	_DOSBase,a6
-			|jsr		_LVOOutput(a6)
-			|move.l	d0,d1
 			move.l	_stdout,d1
-			jsr		_LVOWrite(a6)
+			SYS		Write
 			clrl 	_i
 .len0:
 			.ifgt	CHECKCTRLC
 scheck:	move.l	_SysBase,a6
 			moveql	#0,d0
 			move.l	#12,d1				|#define SIGBREAKB_CTRL_C   12
-			jsr		_LVOSetSignal(a6)
+			SYS		SetSignal
 			and.l	#1<<12,d0
 			move.l	d0,_gotBreak		| int gotBreak; declaration in dl.c
 			.endif
-			moveml	(sp)+,d2-d3/a6
+			moveml	(sp)+,d1-d3/a6
 			rts
 
 			.text
@@ -250,7 +258,7 @@ _myerror:
 	    	moveal  sp,a3
             lea.l   stuffChar(pc),a2
             move.l  _SysBase,a6
-            jsr     _LVORawDoFmt(a6)
+            SYS		RawDoFmt
             move.l	a3,d2			| buffer
             move.l	_stderr,d1		| fh - filehandle
             moveql	#0,d3
@@ -259,7 +267,7 @@ _myerror:
             addq	#1,d3			| d3 will hold the length
             jbra	.e1
 .e2:     	move.l	_DOSBase,a6
-			jsr		_LVOWrite(a6)
+			SYS		Write
 			lea	    256(sp),sp		| deallocate buffer
 			moveml 	(sp)+,d2-d3/a2-a3/a6
 			rts
@@ -273,7 +281,7 @@ _realmalloc:
 			move.l	d0,d2			|Copy to survive AllocMem
 			moveq	#0,d1			|MEMF_ANYTHING
 			move.l  _SysBase,a6
-	        jsr     _LVOAllocMem(a6)|AllocMem(size + 4, 0L)
+	        SYS		AllocMem		|AllocMem(size + 4, 0L)
 			tst.l	d0				|Got it?
 		 	beq.s	1f
 			movea.l	d0,a6			|Copy pointer
@@ -296,7 +304,7 @@ _realfree:
 		lea		-4(a0),a1		|Put in sys reg
 		move.l	(a1),d0			|d0 = size to free
 		move.l  _SysBase,a6
-        jsr     _LVOFreeMem(a6)
+        SYS     FreeMem
 		movea.l	(sp)+,a6
 .nof:	rts
 

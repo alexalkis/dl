@@ -187,8 +187,10 @@ char *memcpy(char *dst, char *src, int size)
 void fastmemcpy(long *dst, long *src, int len)
 {
 	//WARNING: Not safe on overlaps
-	if (len & 3)
+	if (len & 3) {
 		memcpy(dst,src,len);
+		return;
+	}
 	len >>= 2;
 	while (len--)
 		*dst++ = *src++;
@@ -205,9 +207,12 @@ char *realloc(char *orig, int newsize)
 			fastmemcpy(new, orig, (*getsize) - 4);
 			myfree(orig);
 		}
-	} else {
+	}
+#ifdef DEBUGMEMORY
+	else {
 		myerror("Realloc failed on %ld bytes.\n", newsize);
 	}
+#endif
 	return new;
 }
 

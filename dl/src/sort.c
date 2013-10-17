@@ -229,8 +229,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		if (f->fib.fib_EntryType > 0) // (is_directory (f))
 				{
 			if (!dirname) {
-				printf("2. queuing \"%s\" ...command_line_arg=%s\n", dirname,
-						command_line_arg ? "TRUE" : "FALSE");
+				//printf("2. queuing \"%s\" ...command_line_arg=%s\n", dirname,command_line_arg ? "TRUE" : "FALSE");
 				queue_directory(f->fib.fib_FileName, 0, command_line_arg);
 			} else {
 				printf("--> %s  %s\n", dirname, f->fib.fib_FileName);
@@ -552,6 +551,7 @@ int cmp(struct FileInfoBlock *fib1, struct FileInfoBlock *fib2)
  */
 void shellSort(struct fileinfo **a, int n)
 {
+
 	int i, j;
 	struct fileinfo *temp;
 	int gap;
@@ -659,8 +659,10 @@ void print_many_per_line(void)
 
 			indent(pos + name_length, pos + max_name_length);
 			pos += max_name_length;
+
 		}
 		printf("\n");
+
 		bflush();
 		TestBreak();
 	}
@@ -1232,16 +1234,54 @@ int gobble_file(char const *name, enum filetype type, long inode,
 
 
 /* Print information about F in long format.  */
+//#define EXPERIMENTAL
 #ifdef EXPERIMENTAL
-static void
-print_long_format (const struct fileinfo *f)
+static size_t dired_pos;
+/* Write S to STREAM and increment DIRED_POS by S_LEN.  */
+#define DIRED_FPUTS(s, stream, s_len) \
+    do {puts (s); dired_pos += s_len;} while (0)
+
+
+static size_t print_name_with_quoting (const struct fileinfo *f,
+                         bool symlink_target,
+                         struct obstack *stack,
+                         size_t start_col)
+{
+  const char* name = f->fib.fib_FileName;//symlink_target ? f->linkname : f->name;
+
+  bool used_color_this_time
+    = (print_with_color
+        && (print_color_indicator (f, symlink_target)
+            || is_colored (C_NORM)));
+
+  if (stack)
+    PUSH_CURRENT_DIRED_POS (stack);
+
+  size_t width = quote_name (stdout, name, filename_quoting_options, NULL);
+  dired_pos += width;
+
+  if (stack)
+    PUSH_CURRENT_DIRED_POS (stack);
+
+  process_signals ();
+  if (used_color_this_time)
+    {
+      prep_non_filename_text ();
+      if (start_col / line_length != (start_col + width - 1) / line_length)
+        put_indicator (&color_indicator[C_CLR_TO_EOL]);
+    }
+
+  return width;
+}
+
+static void print_long_format (const struct fileinfo *f)
 {
   char modebuf[12];
   char buf[80];
   size_t s;
   char *p;
-  struct timespec when_timespec;
-  struct tm *when_local;
+  //struct timespec when_timespec;
+  //struct tm *when_local;
 
 
   p = buf;
@@ -1249,8 +1289,7 @@ print_long_format (const struct fileinfo *f)
   if (print_inode)
     {
       char hbuf[16];
-      sprintf (p, "%*s ", inode_number_width,
-               format_inode (hbuf, sizeof hbuf, f));
+      sprintf (p, "%*s ", inode_number_width, format_inode (hbuf, sizeof hbuf, f));
       /* Increment by strlen (p) here, rather than by inode_number_width + 1.
          The latter is wrong when inode_number_width is zero.  */
       p += strlen (p);
@@ -1291,44 +1330,44 @@ print_long_format (const struct fileinfo *f)
       p[-1] = ' ';
     }
 
-  when_local = localtime (&when_timespec.tv_sec);
+  //when_local = localtime (&when_timespec.tv_sec);
   s = 0;
   *p = '\1';
 
-  if (f->stat_ok && when_local)
-    {
-      struct timespec six_months_ago;
-      bool recent;
-      char const *fmt;
-
-      /* If the file appears to be in the future, update the current
-         time, in case the file happens to have been modified since
-         the last time we checked the clock.  */
-      if (timespec_cmp (current_time, when_timespec) < 0)
-        {
-          /* Note that gettime may call gettimeofday which, on some non-
-             compliant systems, clobbers the buffer used for localtime's result.
-             But it's ok here, because we use a gettimeofday wrapper that
-             saves and restores the buffer around the gettimeofday call.  */
-          gettime (&current_time);
-        }
-
-      /* Consider a time to be recent if it is within the past six months.
-         A Gregorian year has 365.2425 * 24 * 60 * 60 == 31556952 seconds
-         on the average.  Write this value as an integer constant to
-         avoid floating point hassles.  */
-      six_months_ago.tv_sec = current_time.tv_sec - 31556952 / 2;
-      six_months_ago.tv_nsec = current_time.tv_nsec;
-
-      recent = (timespec_cmp (six_months_ago, when_timespec) < 0
-                && (timespec_cmp (when_timespec, current_time) < 0));
-      fmt = long_time_format[recent];
-
-      /* We assume here that all time zones are offset from UTC by a
-         whole number of seconds.  */
-      s = align_nstrftime (p, TIME_STAMP_LEN_MAXIMUM + 1, fmt,
-                           when_local, 0, when_timespec.tv_nsec);
-    }
+  //if (f->stat_ok && when_local)
+//    {
+//      struct timespec six_months_ago;
+//      bool recent;
+//      char const *fmt;
+//
+//      /* If the file appears to be in the future, update the current
+//         time, in case the file happens to have been modified since
+//         the last time we checked the clock.  */
+//      if (timespec_cmp (current_time, when_timespec) < 0)
+//        {
+//          /* Note that gettime may call gettimeofday which, on some non-
+//             compliant systems, clobbers the buffer used for localtime's result.
+//             But it's ok here, because we use a gettimeofday wrapper that
+//             saves and restores the buffer around the gettimeofday call.  */
+//          gettime (&current_time);
+//        }
+//
+//      /* Consider a time to be recent if it is within the past six months.
+//         A Gregorian year has 365.2425 * 24 * 60 * 60 == 31556952 seconds
+//         on the average.  Write this value as an integer constant to
+//         avoid floating point hassles.  */
+//      six_months_ago.tv_sec = current_time.tv_sec - 31556952 / 2;
+//      six_months_ago.tv_nsec = current_time.tv_nsec;
+//
+//      recent = (timespec_cmp (six_months_ago, when_timespec) < 0
+//                && (timespec_cmp (when_timespec, current_time) < 0));
+//      fmt = long_time_format[recent];
+//
+//      /* We assume here that all time zones are offset from UTC by a
+//         whole number of seconds.  */
+//      s = align_nstrftime (p, TIME_STAMP_LEN_MAXIMUM + 1, fmt,
+//                           when_local, 0, when_timespec.tv_nsec);
+//    }
 
   if (s || !*p)
     {
@@ -1338,16 +1377,16 @@ print_long_format (const struct fileinfo *f)
       /* NUL-terminate the string -- fputs (via DIRED_FPUTS) requires it.  */
       *p = '\0';
     }
-  else
-    {
-      /* The time cannot be converted using the desired format, so
-         print it as a huge integer number of seconds.  */
-      char hbuf[32];
-      sprintf (p, "%*s ", long_time_expected_width (),
-               timetostr (when_timespec.tv_sec, hbuf));
-      /* FIXME: (maybe) We discarded when_timespec.tv_nsec. */
-      p += strlen (p);
-    }
+//  else
+//    {
+//      /* The time cannot be converted using the desired format, so
+//         print it as a huge integer number of seconds.  */
+//      char hbuf[32];
+//      sprintf (p, "%*s ", long_time_expected_width (),
+//               timetostr (when_timespec.tv_sec, hbuf));
+//      /* FIXME: (maybe) We discarded when_timespec.tv_nsec. */
+//      p += strlen (p);
+//    }
 
   DIRED_FPUTS (buf, stdout, p - buf);
   size_t w = print_name_with_quoting (f, false, &dired_obstack, p - buf);

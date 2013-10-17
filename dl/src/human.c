@@ -514,8 +514,8 @@ char *human_readable (int n, char *buf, int opts,int from_block_size, int to_blo
 		int cn=n;
 		while(cn/1024) {
 			++s;
-			n= (n+511)/1024;
-			cn = (cn+511) / 1024;
+			n= (n+511)>>10;///1024;
+			cn = (cn+511)>>10;// / 1024;
 		}
 	}
 
