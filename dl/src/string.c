@@ -22,10 +22,7 @@ char *strcpy(char *dst, const char *src)
 
 char *strdup(const char *str)
 {
-	//static int sum=0;
 	int len = strlen(str) + 1;
-	//sum+=len;
-	//bprintf("%ld bytes ",sum);
 	char *ret = mymalloc(len);
 	if (ret) {
 		strcpy(ret, str);
@@ -49,20 +46,11 @@ void setmem(char *buf, int n, char c)
 {
 	int i;
 
-	for(i=0; i<n; ++i)
-		*buf++=c;
+	for (i = 0; i < n; ++i)
+		*buf++ = c;
 }
 
 
-/*
- int strlen(const char *str)
- {
- int ret = 0;
- while (*str++)
- ++ret;
- return ret;
- }
- */
 int strlen(const char *string)
 {
 	const char *s = string;
@@ -188,7 +176,7 @@ void fastmemcpy(long *dst, long *src, int len)
 {
 	//WARNING: Not safe on overlaps
 	if (len & 3) {
-		memcpy(dst,src,len);
+		memcpy(dst, src, len);
 		return;
 	}
 	len >>= 2;

@@ -1,5 +1,5 @@
 NEEDATEXIT	= 0		| make it 1 to enable the atexit function/logic
-FLUSHONCR 	= 0		| 1--Flush stdout if last char is '\n', 0--Disable NEEDS REDESIGN
+FLUSHONCR 	= 1		| 1--Flush stdout if last char is '\n', 0--Disable NEEDS REDESIGN
 CHECKCTRLC 	= 1		| 1--Enable ctrl-c check on bflush, 0--Disable
 
 			.macro SYS function
@@ -196,10 +196,12 @@ _write:	move.l	8(sp),d1
 			addq	#1,d0
 			dbra	d1,.lc
 			move.l	d0,_i
+			.ifgt FLUSHONCR
 			subq	#1,d0
-			cmp.b	#'\n',(a1,d0.l)	| can kill the system with a big write >256bytes
-			jne		.noov		| string, but I trust you.
+			cmp.b	#'\n',(a1,d0.l)
+			jne		.noov
 			jbsr	_bflush
+			.endif
 .noov:		rts
 
 |returnedLength =  Write( file, buffer, length )
