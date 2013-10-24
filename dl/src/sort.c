@@ -665,8 +665,6 @@ void print_many_per_line(void)
 
 		}
 		printf("\n");
-
-		bflush();
 		TestBreak();
 	}
 }

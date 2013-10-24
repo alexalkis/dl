@@ -176,11 +176,10 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		if (init_structures()) {
 			int seenMany = 0;
 			do {
-				//Dir(arg);
 				gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
-				//queue_directory ("/", NULL, true);
 			} while ((arg = strtok(NULL, " ")) && !gotBreak);
-			if (cwd_n_used) {
+			TestBreak();
+			if (cwd_n_used && !gotBreak) {
 				sort_files();
 				if (!immediate_dirs)
 					extract_dirs_from_files(NULL, true);
@@ -190,7 +189,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					//if (pending_dirs) printf("huh?%s\n",pending_dirs->realname);
 				}
 				struct pending *thispend;
-				while (pending_dirs) {
+				while (pending_dirs && !gotBreak) {
 
 					thispend = pending_dirs;
 					pending_dirs = pending_dirs->next;
@@ -416,7 +415,7 @@ void Dir(char *filedir)
 	UnLock(lock);
 	/* Sort the directory contents.  */
 	sort_files ();
-	if (recursive)
+	if (recursive && !gotBreak)
 		extract_dirs_from_files(filedir, false);
 }
 
@@ -474,16 +473,12 @@ void TestBreak(void)
 	ULONG oldsig;
 	oldsig = SetSignal(0L, (LONG)SIGBREAKF_CTRL_C);
 	if ((oldsig & SIGBREAKF_CTRL_C) != 0) {
+		bflush();
 		myerror("\2330m\233 p***BREAK\n");
+		//zapBuffer();
 		gotBreak = 1;
 	}
 }
-
-//void myPutStr(char *str)
-//{
-//	int len = strlen(str);
-//	Write(Output(), str, len);
-//}
 
 char *dates(char *s, struct DateStamp *dss)
 {

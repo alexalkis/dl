@@ -230,6 +230,14 @@ scheck:	move.l	_SysBase,a6
 			moveml	(sp)+,d1-d3/a6
 			rts
 
+/*
+			.text
+        	.proc
+        	.globl  _zapBuffer
+_zapBuffer:	clrl	_i
+			rts
+*/
+
 			.text
         	.proc
         	.globl  _putchar
