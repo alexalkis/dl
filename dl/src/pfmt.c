@@ -427,7 +427,8 @@ int fwrite(const void *vbuf,size_t elmsize,size_t elms,BPTR fi)
 void puts(const char *str)
 {
 	int len = strlen(str);
-	write(str, len);
+	if (len) write(str, len);
+	write("\n",1);
 }
 
 int fprintf(BPTR fi,const char *ctl,...)

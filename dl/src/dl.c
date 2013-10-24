@@ -167,7 +167,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 						|| format == long_format) ?
 						DEREF_NEVER : DEREF_COMMAND_LINE_SYMLINK_TO_DIR);
 
-	//TODO: Recursion  (Initial code barely in, crashes...)
+	//Done: Recursion  (Seems to work, not fully tested...)
 	//TODO: Handle the non-existant shell substitution of amiga's CLI
 	//this will be new
 	if (goon != -1) {
@@ -228,7 +228,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 						if (pending_dirs && !seenMany)
 							seenMany = 1;
 						if (seenMany)
-							printf("%s \n", thispend->name);
+							printf("%s\n", thispend->name);
 						printf("total %s\n", p);
 
 					}
@@ -242,10 +242,8 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					if (pending_dirs)
 						printf("\n");
 				}
-
 				clear_files();
 			}
-			//} while ((arg = strtok(NULL, " ")) && !gotBreak);
 			free_structures();
 		}
 	}
