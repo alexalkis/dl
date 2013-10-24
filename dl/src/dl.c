@@ -212,12 +212,14 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 						continue;
 					}
 					//}
-					//myprintf("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
+					//myerror("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
 					clear_files();
 
+					//myerror("Before Dir...\n");
 					Dir(thispend->name);
-					/* Sort the directory contents.  */
-					sort_files();
+
+
+					//myerror("After Dir...\n");
 					if (format == long_format || print_block_size) {
 						const char *p;
 						char buf[LONGEST_HUMAN_READABLE + 1];
@@ -226,11 +228,11 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 						if (pending_dirs && !seenMany)
 							seenMany = 1;
 						if (seenMany)
-							printf("%s\n", thispend->name);
+							printf("%s \n", thispend->name);
 						printf("total %s\n", p);
 
 					}
-					//printf("cwd_n_used = %ld\n",cwd_n_used);
+					//myerror("cwd_n_used = %ld\n",cwd_n_used);
 					if (cwd_n_used)
 						print_current_files();
 					//print_dir (thispend->name, thispend->realname,thispend->command_line_arg);
@@ -414,6 +416,8 @@ void Dir(char *filedir)
 		myerror("Hmm, couldn't examine\nUse the Source Luke and fix it!\n");
 	}
 	UnLock(lock);
+	/* Sort the directory contents.  */
+	sort_files ();
 	if (recursive)
 		extract_dirs_from_files(filedir, false);
 }

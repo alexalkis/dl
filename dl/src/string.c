@@ -16,7 +16,7 @@ char *strcpy(char *dst, const char *src)
 	dscan = dst;
 	sscan = src;
 	while ((*dscan++ = *sscan++) != '\0')
-		continue;
+		;
 	return (dst);
 }
 

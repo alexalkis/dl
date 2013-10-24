@@ -122,7 +122,7 @@ void print_many_per_line(void);
 static void print_horizontal(void);
 size_t print_file_name_and_frills(const struct fileinfo *f, size_t start_col);
 size_t length_of_file_name_and_frills(const struct fileinfo *f);
-void print_with_commas (void);
+void print_with_commas(void);
 //node *theTree = NULL;
 
 int init_structures(void)
@@ -193,16 +193,21 @@ void sort_files(void)
 
 char *file_name_concat(char *dirname, char *name, char *dunno)
 {
-	int len1 = strlen(dirname);
+	int len1 = 0;
 	int len2 = strlen(name);
 	int spare = 0;
-	if (dirname[len1 - 1] != '/' && dirname[len1 - 1] != ':')
-		spare = 1;
+	if (dirname) {
+		len1 = strlen(dirname);
+		if (dirname[len1 - 1] != '/' && dirname[len1 - 1] != ':')
+			spare = 1;
+	}
 	char *new = mymalloc(len1 + len2 + 1 + spare);
 	if (new) {
-		memcpy(new, dirname, len1);
-		if (spare)
-			new[len1] = '/';
+		if (len1) {
+			memcpy(new, dirname, len1);
+			if (spare)
+				new[len1] = '/';
+		}
 		strcpy(new + len1 + spare, name);
 	}
 	return new;
@@ -217,25 +222,31 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		/* Insert a marker entry first.  When we dequeue this marker entry,
 		 we'll know that DIRNAME has been processed and may be removed
 		 from the set of active directories.  */
-		printf("queuing %s ...\n", dirname);
+		//myerror("queuing %s ...\n", dirname);
 		queue_directory(NULL, dirname, false);
 	}
 
+
+//	for (i = cwd_n_used; i-- != 0;) {
+//			struct fileinfo *f = sorted_file[i];
+//			myerror("Index: %ld/%ld Filename = \"%s\"\n",i,cwd_n_used,f->fib.fib_FileName);
+//	}
 	/* Queue the directories last one first, because queueing reverses the
 	 order.  */
 	for (i = cwd_n_used; i-- != 0;) {
 		struct fileinfo *f = sorted_file[i];
 
-		if (f->fib.fib_EntryType > 0) // (is_directory (f))
-				{
+		if (f->fib.fib_EntryType > 0) {
+			//myerror("Index: %ld/%ld Filename = \"%s\"\n",i,cwd_n_used,f->fib.fib_FileName);
 			if (!dirname) {
-				//printf("2. queuing \"%s\" ...command_line_arg=%s\n", dirname,command_line_arg ? "TRUE" : "FALSE");
+				///* Sort the directory contents.  */
+				//myerror("2. queuing \"%s\" ...command_line_arg=%s\n", dirname,command_line_arg ? "TRUE" : "FALSE");
 				queue_directory(f->fib.fib_FileName, 0, command_line_arg);
 			} else {
-				printf("--> %s  %s\n", dirname, f->fib.fib_FileName);
+				//myerror("--> %s  %s\n", dirname, f->fib.fib_FileName);
 				char *name = file_name_concat(dirname, f->fib.fib_FileName,
 				NULL);
-				printf("----------------------> %s\n", name);
+				//myerror("----------------------> %s\n", name);
 				queue_directory(name, 0, command_line_arg);
 				myfree(name);
 			}
@@ -287,73 +298,69 @@ void free_pending_ent(struct pending *pend)
 extern int gotBreak;
 
 /*
+ void print_current_files(void)
+ {
+ int i;
+ switch (gDisplayMode) {
+ case DISPLAY_NORMAL:
+ print_many_per_line();
+ bflush();
+ break;
+ case DISPLAY_HORIZONTAL:
+ print_horizontal();
+ bflush();
+ break;
+ case DISPLAY_LONG:
+ for (i = 0; !gotBreak && (i < cwd_n_used); i++) {
+ displayFib(&((struct fileinfo *) sorted_file[i])->fib);
+ print_file_name_and_frills(sorted_file[i], 0);
+ printf("\n");
+ bflush();
+ }
+ TestBreak();
+ bflush();
+ break;
+ default:
+ break;
+ }
+ }
+ */
 void print_current_files(void)
 {
 	int i;
-	switch (gDisplayMode) {
-	case DISPLAY_NORMAL:
+
+	switch (format) {
+	case one_per_line:
+		for (i = 0; i < cwd_n_used; i++) {
+			print_file_name_and_frills(sorted_file[i], 0);
+			putchar('\n');
+		}
+		break;
+
+	case many_per_line:
 		print_many_per_line();
-		bflush();
 		break;
-	case DISPLAY_HORIZONTAL:
+
+	case horizontal:
 		print_horizontal();
-		bflush();
 		break;
-	case DISPLAY_LONG:
-		for (i = 0; !gotBreak && (i < cwd_n_used); i++) {
+
+	case with_commas:
+		print_with_commas();
+		break;
+
+	case long_format:
+		for (i = 0; !gotBreak && i < cwd_n_used; i++) {
+			//set_normal_color ();
+			//print_long_format (sorted_file[i]);
+			//DIRED_PUTCHAR ('\n');
 			displayFib(&((struct fileinfo *) sorted_file[i])->fib);
 			print_file_name_and_frills(sorted_file[i], 0);
 			printf("\n");
 			bflush();
 		}
-		TestBreak();
-		bflush();
-		break;
-	default:
 		break;
 	}
-}
-*/
-void
-print_current_files (void)
-{
-  int i;
-
-  switch (format)
-    {
-    case one_per_line:
-      for (i = 0; i < cwd_n_used; i++)
-        {
-          print_file_name_and_frills (sorted_file[i], 0);
-          putchar ('\n');
-        }
-      break;
-
-    case many_per_line:
-      print_many_per_line ();
-      break;
-
-    case horizontal:
-      print_horizontal ();
-      break;
-
-    case with_commas:
-      print_with_commas ();
-      break;
-
-    case long_format:
-      for (i = 0; !gotBreak && i < cwd_n_used; i++)
-        {
-          //set_normal_color ();
-          //print_long_format (sorted_file[i]);
-          //DIRED_PUTCHAR ('\n');
-    	  displayFib(&((struct fileinfo *) sorted_file[i])->fib);
-    	  			print_file_name_and_frills(sorted_file[i], 0);
-    	  			printf("\n");
-    	  			bflush();
-        }
-      break;
-    }
 }
 
 void addEntry(struct FileInfoBlock *fib)
@@ -365,6 +372,7 @@ void addEntry(struct FileInfoBlock *fib)
 		cwd_n_alloc *= 2;
 	}
 
+	//myerror("adding %s\n",fib->fib_FileName);
 	//Remapping the fib for the highlight table to work
 	switch (fib->fib_DirEntryType) {
 	case ST_LINKFILE:
@@ -409,13 +417,13 @@ void addEntry(struct FileInfoBlock *fib)
 	}
 
 	if (print_inode) {
-			char buf[16];
-			int len = strlen(umaxtostr(fib->fib_DiskKey, buf));
-			//myerror("len=%ld, width=%ld\n",len,inode_number_width);
-			if (inode_number_width < len)
-				inode_number_width = len;
-			//myerror("len=%ld, width=%ld\n",len,inode_number_width);
-		}
+		char buf[16];
+		int len = strlen(umaxtostr(fib->fib_DiskKey, buf));
+		//myerror("len=%ld, width=%ld\n",len,inode_number_width);
+		if (inode_number_width < len)
+			inode_number_width = len;
+		//myerror("len=%ld, width=%ld\n",len,inode_number_width);
+	}
 }
 
 /* Returns pointer just past the '.' of the string when there is a . in string
@@ -595,39 +603,34 @@ static void indent(size_t from, size_t to)
 	}
 }
 
-void print_with_commas (void)
+void print_with_commas(void)
 {
-  size_t filesno;
-  size_t pos = 0;
+	size_t filesno;
+	size_t pos = 0;
 
-  for (filesno = 0; filesno < cwd_n_used; filesno++)
-    {
-      struct fileinfo const *f = sorted_file[filesno];
-      size_t len = length_of_file_name_and_frills (f);
+	for (filesno = 0; filesno < cwd_n_used; filesno++) {
+		struct fileinfo const *f = sorted_file[filesno];
+		size_t len = length_of_file_name_and_frills(f);
 
-      if (filesno != 0)
-        {
-          char separator;
+		if (filesno != 0) {
+			char separator;
 
-          if (pos + len + 2 < line_length)
-            {
-              pos += 2;
-              separator = ' ';
-            }
-          else
-            {
-              pos = 0;
-              separator = '\n';
-            }
+			if (pos + len + 2 < line_length) {
+				pos += 2;
+				separator = ' ';
+			} else {
+				pos = 0;
+				separator = '\n';
+			}
 
-          putchar (',');
-          putchar (separator);
-        }
+			putchar(',');
+			putchar(separator);
+		}
 
-      print_file_name_and_frills (f, pos);
-      pos += len;
-    }
-  putchar ('\n');
+		print_file_name_and_frills(f, pos);
+		pos += len;
+	}
+	putchar('\n');
 }
 
 void print_many_per_line(void)
@@ -1232,7 +1235,6 @@ int gobble_file(char const *name, enum filetype type, long inode,
 //    print_current_files ();
 //}
 
-
 /* Print information about F in long format.  */
 //#define EXPERIMENTAL
 #ifdef EXPERIMENTAL
@@ -1241,100 +1243,94 @@ static size_t dired_pos;
 #define DIRED_FPUTS(s, stream, s_len) \
     do {puts (s); dired_pos += s_len;} while (0)
 
-
 static size_t print_name_with_quoting (const struct fileinfo *f,
-                         bool symlink_target,
-                         struct obstack *stack,
-                         size_t start_col)
+		bool symlink_target,
+		struct obstack *stack,
+		size_t start_col)
 {
-  const char* name = f->fib.fib_FileName;//symlink_target ? f->linkname : f->name;
+	const char* name = f->fib.fib_FileName; //symlink_target ? f->linkname : f->name;
 
-  bool used_color_this_time
-    = (print_with_color
-        && (print_color_indicator (f, symlink_target)
-            || is_colored (C_NORM)));
+	bool used_color_this_time
+	= (print_with_color
+			&& (print_color_indicator (f, symlink_target)
+					|| is_colored (C_NORM)));
 
-  if (stack)
-    PUSH_CURRENT_DIRED_POS (stack);
+	if (stack)
+	PUSH_CURRENT_DIRED_POS (stack);
 
-  size_t width = quote_name (stdout, name, filename_quoting_options, NULL);
-  dired_pos += width;
+	size_t width = quote_name (stdout, name, filename_quoting_options, NULL);
+	dired_pos += width;
 
-  if (stack)
-    PUSH_CURRENT_DIRED_POS (stack);
+	if (stack)
+	PUSH_CURRENT_DIRED_POS (stack);
 
-  process_signals ();
-  if (used_color_this_time)
-    {
-      prep_non_filename_text ();
-      if (start_col / line_length != (start_col + width - 1) / line_length)
-        put_indicator (&color_indicator[C_CLR_TO_EOL]);
-    }
+	process_signals ();
+	if (used_color_this_time)
+	{
+		prep_non_filename_text ();
+		if (start_col / line_length != (start_col + width - 1) / line_length)
+		put_indicator (&color_indicator[C_CLR_TO_EOL]);
+	}
 
-  return width;
+	return width;
 }
 
 static void print_long_format (const struct fileinfo *f)
 {
-  char modebuf[12];
-  char buf[80];
-  size_t s;
-  char *p;
-  //struct timespec when_timespec;
-  //struct tm *when_local;
+	char modebuf[12];
+	char buf[80];
+	size_t s;
+	char *p;
+	//struct timespec when_timespec;
+	//struct tm *when_local;
 
+	p = buf;
 
-  p = buf;
+	if (print_inode)
+	{
+		char hbuf[16];
+		sprintf (p, "%*s ", inode_number_width, format_inode (hbuf, sizeof hbuf, f));
+		/* Increment by strlen (p) here, rather than by inode_number_width + 1.
+		 The latter is wrong when inode_number_width is zero.  */
+		p += strlen (p);
+	}
 
-  if (print_inode)
-    {
-      char hbuf[16];
-      sprintf (p, "%*s ", inode_number_width, format_inode (hbuf, sizeof hbuf, f));
-      /* Increment by strlen (p) here, rather than by inode_number_width + 1.
-         The latter is wrong when inode_number_width is zero.  */
-      p += strlen (p);
-    }
+	if (print_block_size)
+	{
+		char hbuf[16];
+		char const *blocks =human_readable (f->fib.fib_NumBlocks, hbuf, human_output_opts,
+				ST_NBLOCKSIZE, output_block_size);
+		int pad;
+		for (pad = block_size_width - mbswidth (blocks, 0); 0 < pad; pad--)
+		*p++ = ' ';
+		while ((*p++ = *blocks++))
+		continue;
+		p[-1] = ' ';
+	}
 
-  if (print_block_size)
-    {
-      char hbuf[16];
-      char const *blocks =human_readable (f->fib.fib_NumBlocks, hbuf, human_output_opts,
-                           ST_NBLOCKSIZE, output_block_size);
-      int pad;
-      for (pad = block_size_width - mbswidth (blocks, 0); 0 < pad; pad--)
-        *p++ = ' ';
-      while ((*p++ = *blocks++))
-        continue;
-      p[-1] = ' ';
-    }
+	/* Increment by strlen (p) here, rather than by, e.g.,
+	 sizeof modebuf - 2 + any_has_acl + 1 + nlink_width + 1.
+	 The latter is wrong when nlink_width is zero.  */
+	p += strlen (p);
 
+	{
+		char hbuf[32];
+		char const *size =human_readable (unsigned_file_size (f->fib.fib_Size),
+				hbuf, file_human_output_opts, 1,
+				file_output_block_size);
+		int pad;
+		for (pad = file_size_width - mbswidth (size, 0); 0 < pad; pad--)
+		*p++ = ' ';
+		while ((*p++ = *size++))
+		continue;
+		p[-1] = ' ';
+	}
 
-  /* Increment by strlen (p) here, rather than by, e.g.,
-     sizeof modebuf - 2 + any_has_acl + 1 + nlink_width + 1.
-     The latter is wrong when nlink_width is zero.  */
-  p += strlen (p);
+	//when_local = localtime (&when_timespec.tv_sec);
+	s = 0;
+	*p = '\1';
 
-
-
-
-    {
-      char hbuf[32];
-      char const *size =human_readable (unsigned_file_size (f->fib.fib_Size),
-                           hbuf, file_human_output_opts, 1,
-                           file_output_block_size);
-      int pad;
-      for (pad = file_size_width - mbswidth (size, 0); 0 < pad; pad--)
-        *p++ = ' ';
-      while ((*p++ = *size++))
-        continue;
-      p[-1] = ' ';
-    }
-
-  //when_local = localtime (&when_timespec.tv_sec);
-  s = 0;
-  *p = '\1';
-
-  //if (f->stat_ok && when_local)
+	//if (f->stat_ok && when_local)
 //    {
 //      struct timespec six_months_ago;
 //      bool recent;
@@ -1369,14 +1365,14 @@ static void print_long_format (const struct fileinfo *f)
 //                           when_local, 0, when_timespec.tv_nsec);
 //    }
 
-  if (s || !*p)
-    {
-      p += s;
-      *p++ = ' ';
+	if (s || !*p)
+	{
+		p += s;
+		*p++ = ' ';
 
-      /* NUL-terminate the string -- fputs (via DIRED_FPUTS) requires it.  */
-      *p = '\0';
-    }
+		/* NUL-terminate the string -- fputs (via DIRED_FPUTS) requires it.  */
+		*p = '\0';
+	}
 //  else
 //    {
 //      /* The time cannot be converted using the desired format, so
@@ -1388,8 +1384,8 @@ static void print_long_format (const struct fileinfo *f)
 //      p += strlen (p);
 //    }
 
-  DIRED_FPUTS (buf, stdout, p - buf);
-  size_t w = print_name_with_quoting (f, false, &dired_obstack, p - buf);
+	DIRED_FPUTS (buf, stdout, p - buf);
+	size_t w = print_name_with_quoting (f, false, &dired_obstack, p - buf);
 
 //  if (f->filetype == symbolic_link)
 //    {
