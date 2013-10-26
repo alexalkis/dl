@@ -109,22 +109,16 @@ struct highlight highlight_tabx13[13] = {
 /*  5 DIR_DEFAULT  */{ "", "", 0 }, };
 extern int gReverse;
 extern int gSort;
+extern int gotBreak;
 
-void displayFib(struct FileInfoBlock *fib);
 void TestBreak(void);
-
 void shellSort(struct fileinfo **a, int n);
-//void insert(node ** tree, struct FileInfoBlock *fib);
-//void print_inorder(node * tree);
-//void deltree(node * tree);
-
 void print_many_per_line(void);
 static void print_horizontal(void);
 size_t print_file_name_and_frills(const struct fileinfo *f, size_t start_col);
 size_t length_of_file_name_and_frills(const struct fileinfo *f);
-void print_long_format(const struct fileinfo *f);
+static void print_long_format(const struct fileinfo *f);
 void print_with_commas(void);
-//node *theTree = NULL;
 
 int init_structures(void)
 {
@@ -295,45 +289,16 @@ void free_pending_ent(struct pending *pend)
 	myfree((char * )pend);
 }
 
-extern int gotBreak;
 
-/*
- void print_current_files(void)
- {
- int i;
- switch (gDisplayMode) {
- case DISPLAY_NORMAL:
- print_many_per_line();
- bflush();
- break;
- case DISPLAY_HORIZONTAL:
- print_horizontal();
- bflush();
- break;
- case DISPLAY_LONG:
- for (i = 0; !gotBreak && (i < cwd_n_used); i++) {
- displayFib(&((struct fileinfo *) sorted_file[i])->fib);
- print_file_name_and_frills(sorted_file[i], 0);
- printf("\n");
- bflush();
- }
- TestBreak();
- bflush();
- break;
- default:
- break;
- }
- }
- */
 void print_current_files(void)
 {
 	int i;
 
 	switch (format) {
 	case one_per_line:
-		for (i = 0; i < cwd_n_used; i++) {
+		for (i = 0; i < cwd_n_used && !gotBreak; i++) {
 			print_file_name_and_frills(sorted_file[i], 0);
-			putchar('\n');
+			write("\n",1);//putchar('\n');
 		}
 		break;
 
@@ -365,6 +330,7 @@ void print_current_files(void)
 		}
 		break;
 	}
+	TestBreak();
 }
 
 void addEntry(struct FileInfoBlock *fib)
@@ -678,8 +644,7 @@ void print_many_per_line(void)
 			pos += max_name_length;
 
 		}
-		printf("\n");
-		TestBreak();
+		puts("");
 	}
 }
 
@@ -919,7 +884,7 @@ static void print_horizontal(void)
 		max_name_length = line_fmt->col_arr[col];
 	}
 	printf("\n");
-	TestBreak();
+
 }
 
 void attach(char *dest, const char *dirname, const char *name)
@@ -948,7 +913,7 @@ int stat(char *file, struct fileinfo *f)
 		if ((Examine(lock, &f->fib))) {
 			ret = 0;
 		} else {
-			myerror("Oopps, examine failed on %s ", file);
+			//myerror("Oopps, examine failed on %s ", file);
 			ret = -1;
 		}
 		UnLock(lock);
@@ -1025,7 +990,7 @@ int gobble_file(char const *name, enum filetype type, long inode,
 			 an exit status of 2.  For other files, stat failure
 			 provokes an exit status of 1.  */
 			//file_failure (command_line_arg,_("cannot access %s"), absolute_name);
-			myerror("cannot access %s (%ld)\n", absolute_name, errno);
+			myerror("%s: cannot access %s [%ld]\n",arg0, absolute_name, errno);
 			if (command_line_arg) {
 				if (ff)
 					myfree(ff);

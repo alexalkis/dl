@@ -261,7 +261,7 @@ _putchar:
 			move.l	d0,_i
 			cmpl	#BUFFERSIZE,d0
 			jle		.putcok
-			bsr		_bflush
+			jbsr	_bflush
 .putcok:	rts
 
 

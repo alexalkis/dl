@@ -23,6 +23,7 @@ void bflush(void);
 /* End of asm prototyping */
 
 
+
 #define uch		unsigned char
 #define IsUpper(c) (c>=0xC0 ? c<=0xDE && c!=0xD7 : c>=0x41 && c<=0x5A)
 #define ToLower(c) (IsUpper((uch) c) ? (unsigned) c | 0x20 : (unsigned) c)

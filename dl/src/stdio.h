@@ -13,10 +13,10 @@
 
 extern BPTR		stderr;
 extern BPTR		stdout;
+extern char *arg0;
 int printf(const char *ctl, ...);
 int fprintf(BPTR fi,const char *ctl,...);
 int sprintf(char *buf,const char *ctl,...);
 void write(const char *str,int len);
 void puts(const char *str);
-
 #endif /* STDIO_H_ */

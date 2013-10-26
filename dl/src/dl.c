@@ -50,11 +50,9 @@
 
 void GetWinBounds(register int *w __asm("a0"), register int *h __asm("a1"));
 
-
 char *dates(char *s, struct DateStamp *dss);
 char *times(char *s, struct DateStamp *dss);
 const char *wd(int year, int month, int day);
-
 
 void Dir(char *filedir);
 void displayFib(struct FileInfoBlock *fib);
@@ -121,8 +119,6 @@ int windowWidth = 77;
 int windowHeight = 30;
 int nDirs, nFiles, nTotalSize, total_blocks;
 
-
-
 extern char *arg0;
 
 int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
@@ -138,13 +134,11 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 //	stderr =
 //			((struct CommandLineInterface *) BADDR(procp->pr_CLI))->cli_StandardOutput;
 
-
 //	struct CommandLineInterface *cli=((struct CommandLineInterface *)BADDR(procp->pr_CLI));
 //		bprint(cli->cli_CommandName);
 //		bprint(cli->cli_SetName);
 //		bprint(cli->cli_Prompt);
 //		bprint(cli->cli_CommandFile);
-	printf("Arg0 = %s\n",arg0);
 	if (OSVersion == 13) {
 		highlight_tab = &highlight_tabx13[7];
 	}
@@ -219,7 +213,6 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 
 					//myerror("Before Dir...\n");
 					Dir(thispend->name);
-
 
 					//myerror("After Dir...\n");
 					if (format == long_format || print_block_size) {
@@ -314,7 +307,13 @@ int ParseSwitches(char *filedir)
 					//gSize = SIZE_BLOCKS;
 					break;
 				case 'x':
-					gDisplayMode = DISPLAY_HORIZONTAL;
+					format = horizontal;
+
+					break;
+				case '1':
+					/* -1 has no effect after -l.  */
+					if (format != long_format)
+						format = one_per_line;
 					break;
 				case 'R':
 					recursive = true;
@@ -334,9 +333,12 @@ int ParseSwitches(char *filedir)
 								"There is NO WARRANTY, to the extent permitted by law.\n"
 								"Written by Richard M. Stallman and David MacKenzie.\n\n");
 						return -1;
-					} else if (!strncmp(f + 1, "time=full",9)) {
+					} else if (!strncmp(f + 1, "time=full", 9)) {
 						gTimeDateFormat = TIMEDATE_FULL;
 						f += 9;
+					} else {
+						myerror("%s: invalid option '-%s'\n", arg0, f);
+						return -1;
 					}
 					//printf("%s <------\n",f+1);
 					break;
@@ -346,7 +348,7 @@ int ParseSwitches(char *filedir)
 					notSeenEnd = 0;
 					break;
 				default:
-					myerror("dl: invalid option -- '%lc'\n", *f);
+					myerror("%s: invalid option '%lc'\n", arg0, *f);
 					gotBreak = 1;
 					return -1;
 				}
@@ -417,7 +419,7 @@ void Dir(char *filedir)
 	}
 	UnLock(lock);
 	/* Sort the directory contents.  */
-	sort_files ();
+	sort_files();
 	if (recursive && !gotBreak)
 		extract_dirs_from_files(filedir, false);
 }
