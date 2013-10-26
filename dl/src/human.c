@@ -506,6 +506,7 @@ static const char power_letter[] =
   'Y'	/* yotta or 2**80 */
 };
 
+/* TODO: Improve this */
 char *human_readable (int n, char *buf, int opts,int from_block_size, int to_block_size)
 {
 	int s=0;

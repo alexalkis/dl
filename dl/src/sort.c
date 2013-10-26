@@ -113,6 +113,7 @@ extern int gotBreak;
 
 void TestBreak(void);
 void shellSort(struct fileinfo **a, int n);
+void quicksort_iterative(struct fileinfo **array, unsigned len);
 void print_many_per_line(void);
 static void print_horizontal(void);
 size_t print_file_name_and_frills(const struct fileinfo *f, size_t start_col);
@@ -172,6 +173,13 @@ void initialize_ordering_vector(void)
 		sorted_file[i] = &cwd_file[i];
 }
 
+#define USESHELLSORT
+#ifdef USESHELLSORT
+#define sort shellSort
+#else
+#define sort quicksort_iterative
+#endif
+
 void sort_files(void)
 {
 	if (sorted_file_alloc < cwd_n_used + cwd_n_used / 2) {
@@ -183,7 +191,7 @@ void sort_files(void)
 	initialize_ordering_vector();
 	if (gSort == SORT_NONE)
 		return;
-	shellSort((struct fileinfo **) sorted_file, cwd_n_used);
+	sort((struct fileinfo **) sorted_file, cwd_n_used);
 }
 
 char *file_name_concat(char *dirname, char *name, char *dunno)
@@ -439,10 +447,11 @@ int cmp(struct FileInfoBlock *fib1, struct FileInfoBlock *fib2)
 		break;
 	case SORT_DATE:
 		ret = fib2->fib_Date.ds_Days - fib1->fib_Date.ds_Days;
-		if (ret == 0)
+		if (ret == 0) {
 			ret = fib2->fib_Date.ds_Minute - fib1->fib_Date.ds_Minute;
-		if (ret == 0)
-			ret = fib2->fib_Date.ds_Tick - fib1->fib_Date.ds_Tick;
+			if (ret == 0)
+				ret = fib2->fib_Date.ds_Tick - fib1->fib_Date.ds_Tick;
+		}
 		break;
 	default:
 		ret = 1;
@@ -453,85 +462,34 @@ int cmp(struct FileInfoBlock *fib1, struct FileInfoBlock *fib2)
 	return ret;
 }
 
-/*
+#ifndef USESHELLSORT
+///source: http://en.wikibooks.org/wiki/Algorithm_Implementation/Sorting/Quicksort#C
+#define MAX 64            /* stack size for max 2^(64/2) array elements  */
+void quicksort_iterative(struct fileinfo **array, unsigned len) {
+   unsigned left = 0, stack[MAX], pos = 0, seed = 1971;//rand();
+   unsigned right;
 
- void addFib(struct FileInfoBlock *fib)
- {
- //myprintf("%s" "\x9B" "\x4B" "\r", fib->fib_FileName);
- insert(&theTree, fib);
- }
-
-
- void displaySorted(int show)
- {
- if (show)
- print_inorder(theTree);
- deltree(theTree);
- }
-
- void insert(node ** tree, struct FileInfoBlock *fib)
- {
- //static int counter=0;
- node *temp = NULL;
-
- if (!(*tree)) {
- //myprintf("%ld\n",++counter);
- temp = (node *) mymalloc(sizeof(node));
- temp->left = temp->right = NULL;
- temp->fib = *fib;
- *tree = temp;
- return;
- }
- if (cmp(fib, &(*tree)->fib) < 0) {
- insert(&(*tree)->left, fib);
- } else { //if (val > (*tree)->data) { //have to handle == to, alkis
- insert(&(*tree)->right, fib);
- }
- }
-
- void deltree(node * tree)
- {
- if (tree) {
- deltree(tree->left);
- deltree(tree->right);
- myfree((char * ) tree);
- }
- }
- void print_inorder(node * tree)
- {
- if (tree) {
- print_inorder(tree->left);
- displayFib(&tree->fib);
- print_inorder(tree->right);
- }
- }
- */
-/////source: http://en.wikibooks.org/wiki/Algorithm_Implementation/Sorting/Quicksort#C
-//#define MAX 64            /* stack size for max 2^(64/2) array elements  */
-//void quicksort_iterative(struct fileinfo **array, unsigned len) {
-//   unsigned left = 0, stack[MAX], pos = 0, seed = rand();
-//   unsigned right;
-//
-//   for ( ; ; ) {                                           /* outer loop */
-//      for (; left+1 < len; len++) {                /* sort left to len-1 */
-//         if (pos == MAX) len = stack[pos = 0];  /* stack overflow, reset */
-//         struct fileinfo * pivot = array[left+seed%(len-left)];  /* pick random pivot */
-//         seed = seed*69069+1;                /* next pseudorandom number */
-//         stack[pos++] = len;                    /* sort right part later */
-//         for (right = left-1; ; ) { /* inner loop: partitioning */
-//            while (array[++right] < pivot);  /* look for greater element */
-//            while (pivot < array[--len]);    /* look for smaller element */
-//            if (right >= len) break;           /* partition point found? */
-//            struct fileinfo * temp = array[right];
-//            array[right] = array[len];                  /* the only swap */
-//            array[len] = temp;
-//         }                            /* partitioned, continue left part */
-//      }
-//      if (pos == 0) break;                               /* stack empty? */
-//      left = len;                             /* left to right is sorted */
-//      len = stack[--pos];                      /* get next range to sort */
-//   }
-//}
+   for ( ; ; ) {                                           /* outer loop */
+      for (; left+1 < len; len++) {                /* sort left to len-1 */
+         if (pos == MAX) len = stack[pos = 0];  /* stack overflow, reset */
+         struct fileinfo * pivot = array[left+seed%(len-left)];  /* pick random pivot */
+         seed = seed*69069+1;                /* next pseudorandom number */
+         stack[pos++] = len;                    /* sort right part later */
+         for (right = left-1; ; ) { /* inner loop: partitioning */
+            while (cmp(array[++right],pivot)<0);  /* look for greater element */
+            while (cmp(pivot,array[--len])<0);    /* look for smaller element */
+            if (right >= len) break;           /* partition point found? */
+            struct fileinfo * temp = array[right];
+            array[right] = array[len];                  /* the only swap */
+            array[len] = temp;
+         }                            /* partitioned, continue left part */
+      }
+      if (pos == 0) break;                               /* stack empty? */
+      left = len;                             /* left to right is sorted */
+      len = stack[--pos];                      /* get next range to sort */
+   }
+}
+#else
 /* Well shell sort cause:
  * A) It's small and pretty
  * B) You'll never encounter directories with so many entries that quicksort will be faster
@@ -552,7 +510,7 @@ void shellSort(struct fileinfo **a, int n)
 				a[j + gap] = temp;
 			}
 }
-
+#endif
 ///Nothing remotely related to sorting below this line
 
 extern int windowWidth;
