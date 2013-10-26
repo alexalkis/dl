@@ -177,8 +177,8 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 			int seenMany = 0;
 			do {
 				gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
+				TestBreak();
 			} while ((arg = strtok(NULL, " ")) && !gotBreak);
-			TestBreak();
 			if (cwd_n_used && !gotBreak) {
 				sort_files();
 				if (!immediate_dirs)
