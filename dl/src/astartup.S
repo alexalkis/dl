@@ -36,6 +36,16 @@ mystart:
 			adda.l	a4,a4				| normal pointer = 4 * BPTR
 			adda.l	a4,a4
 			move.l	cli_StandardOutput.W(a4),_stderr
+			move.l	cli_CommandName.W(a4),a4
+			adda.l	a4,a4				| normal pointer = 4 * BPTR
+			adda.l	a4,a4
+			move.l	a4,_arg0
+			moveb	(a4),d0			| BSTR's first byte holds the length
+			ext.w	d0
+			subq	#1,d0
+larg0:		move.b	1.W(a4),(a4)+	| shift bytes left...(covering leading len)
+			dbra	d0,larg0
+			clrb	(a4)			| ...and put zero at end
 
 			move.l	d2,d0	|restore cmd line arguments, len at d0
 			move.l	a2,a0	| actual argument (as one string) in a0
@@ -129,6 +139,7 @@ stuffChar:
 			.global _stdout
 			.global _stdin
 			.global _stderr
+			.global _arg0
 	        .data
 
 	        .even
@@ -137,6 +148,7 @@ _DOSBase:	.long 0
 _stdout:	.long 0
 _stdin:	.long 0
 _stderr:	.long 0
+_arg0:		.long 0
 OldWindowPtr: .long 0
 _dosname:	.asciz "dos.library"
 			.even

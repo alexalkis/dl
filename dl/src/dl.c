@@ -123,6 +123,8 @@ int nDirs, nFiles, nTotalSize, total_blocks;
 
 
 
+extern char *arg0;
+
 int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 {
 	DateStamp(&Now);
@@ -137,11 +139,12 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 //			((struct CommandLineInterface *) BADDR(procp->pr_CLI))->cli_StandardOutput;
 
 
-	//struct CommandLineInterface *cli=((struct CommandLineInterface *)BADDR(procp->pr_CLI));
-//		myprintf("Commandname: %b\n",cli->cli_CommandName);
-//		myprintf("SetName: %b\n",cli->cli_SetName);
-//		myprintf("Prompt: %b\n",cli->cli_Prompt);
-//		myprintf("CommandFile: %b\n",cli->cli_CommandFile);
+//	struct CommandLineInterface *cli=((struct CommandLineInterface *)BADDR(procp->pr_CLI));
+//		bprint(cli->cli_CommandName);
+//		bprint(cli->cli_SetName);
+//		bprint(cli->cli_Prompt);
+//		bprint(cli->cli_CommandFile);
+	printf("Arg0 = %s\n",arg0);
 	if (OSVersion == 13) {
 		highlight_tab = &highlight_tabx13[7];
 	}

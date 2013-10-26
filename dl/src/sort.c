@@ -1358,41 +1358,6 @@ static void print_long_format(const struct fileinfo *f)
 	s = 0;
 	*p = '\1';
 
-	//if (f->stat_ok && when_local)
-//    {
-//      struct timespec six_months_ago;
-//      bool recent;
-//      char const *fmt;
-//
-//      /* If the file appears to be in the future, update the current
-//         time, in case the file happens to have been modified since
-//         the last time we checked the clock.  */
-//      if (timespec_cmp (current_time, when_timespec) < 0)
-//        {
-//          /* Note that gettime may call gettimeofday which, on some non-
-//             compliant systems, clobbers the buffer used for localtime's result.
-//             But it's ok here, because we use a gettimeofday wrapper that
-//             saves and restores the buffer around the gettimeofday call.  */
-//          gettime (&current_time);
-//        }
-//
-//      /* Consider a time to be recent if it is within the past six months.
-//         A Gregorian year has 365.2425 * 24 * 60 * 60 == 31556952 seconds
-//         on the average.  Write this value as an integer constant to
-//         avoid floating point hassles.  */
-//      six_months_ago.tv_sec = current_time.tv_sec - 31556952 / 2;
-//      six_months_ago.tv_nsec = current_time.tv_nsec;
-//
-//      recent = (timespec_cmp (six_months_ago, when_timespec) < 0
-//                && (timespec_cmp (when_timespec, current_time) < 0));
-//      fmt = long_time_format[recent];
-//
-//      /* We assume here that all time zones are offset from UTC by a
-//         whole number of seconds.  */
-//      s = align_nstrftime (p, TIME_STAMP_LEN_MAXIMUM + 1, fmt,
-//                           when_local, 0, when_timespec.tv_nsec);
-//    }
-
 	s=dates(p,&f->fib.fib_Date);
 	p+=10;
 	*p++=' ';
@@ -1405,20 +1370,8 @@ static void print_long_format(const struct fileinfo *f)
 		/* NUL-terminate the string -- fputs (via DIRED_FPUTS) requires it.  */
 		*p = '\0';
 	}
-	//*p='\0';//ALKIS REMOVE
-//  else
-//    {
-//      /* The time cannot be converted using the desired format, so
-//         print it as a huge integer number of seconds.  */
-//      char hbuf[32];
-//      sprintf (p, "%*s ", long_time_expected_width (),
-//               timetostr (when_timespec.tv_sec, hbuf));
-//      /* FIXME: (maybe) We discarded when_timespec.tv_nsec. */
-//      p += strlen (p);
-//    }
 
-//	DIRED_FPUTS (buf, stdout, p - buf);
-//	size_t w = print_name_with_quoting (f, false, &dired_obstack, p - buf);
+	//	size_t w = print_name_with_quoting (f, false, &dired_obstack, p - buf);
 
 	printf("%s %s\n", buf, f->fib.fib_FileName);
 
