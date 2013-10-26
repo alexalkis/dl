@@ -266,7 +266,7 @@ int ParseSwitches(char *filedir)
 	char *save = filedir;
 	int notSeenEnd;
 
-	//printf("Before switch parsing '%s'\n", filedir);bflush();
+	//printf("Before switch parsing '%s'\n", filedir);
 	while (*filedir) {
 		while (*filedir == ' ') //skip space
 			++filedir;
@@ -326,16 +326,16 @@ int ParseSwitches(char *filedir)
 								"\nUses parts from:\n"
 								"ls (GNU coreutils) 8.13\n"
 								"Copyright (C) 2011 Free Software Foundation, Inc.\n"
-								"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
+								"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
 								"This is free software: you are free to change and redistribute it.\n"
 								"There is NO WARRANTY, to the extent permitted by law.\n"
 								"Written by Richard M. Stallman and David MacKenzie.\n\n");
 						return -1;
-					} else if (!strcmp(f + 1, "time=full")) {
+					} else if (!strncmp(f + 1, "time=full",9)) {
 						gTimeDateFormat = TIMEDATE_FULL;
 						f += 9;
 					}
-					//myprintf("%s <------\n",f+1);
+					//printf("%s <------\n",f+1);
 					break;
 				case ' ':
 				case '\0':
@@ -417,55 +417,6 @@ void Dir(char *filedir)
 	sort_files ();
 	if (recursive && !gotBreak)
 		extract_dirs_from_files(filedir, false);
-}
-
-void displayFib(struct FileInfoBlock *fib)
-{
-	char s[12], t[12], str[5];
-	str[4] = '\0';
-	if (gDisplayMode == DISPLAY_LONG) {
-		int ds = fib->fib_Size;
-		if (fib->fib_DirEntryType <= 0) {
-			if (gTimeDateFormat == TIMEDATE_HUMAN && gSize == SIZE_NORMAL) {
-				str[1] = str[2] = '\0';
-				if (ds < 1024) {
-					str[0] = 'b';
-					str[1] = ' ';
-				} else if (ds < 1024000) {
-					ds = (ds + 512) / 1024;
-					str[0] = 'k';
-					str[1] = 'b';
-				} else {
-					ds = (ds + 512000) / (1024000);
-					str[0] = 'm';
-					str[1] = 'b';
-				}
-				printf("%5d%s ", ds, str);
-			} else
-				printf("%7d ",
-						(gSize == SIZE_NORMAL) ?
-								fib->fib_Size : fib->fib_NumBlocks);
-		} else {
-			printf("%7s ", "[dir]");
-		}
-		str[0] = (fib->fib_Protection & FIBF_READ) ? '-' : 'r';
-		str[1] = (fib->fib_Protection & FIBF_WRITE) ? '-' : 'w';
-		str[2] = (fib->fib_Protection & FIBF_EXECUTE) ? '-' : 'x';
-		str[3] = (fib->fib_Protection & FIBF_DELETE) ? '-' : 'd';
-		printf("%s %s ", dates(s, &fib->fib_Date), times(t, &fib->fib_Date));
-
-		if (gTimeDateFormat != TIMEDATE_HUMAN)
-			printf("%s ", str);
-
-//		if (fib->fib_DirEntryType > 0)
-//			myPutStr("\x9b" "2m");
-//		myPutStr(fib->fib_FileName);
-//		if (fib->fib_DirEntryType > 0)
-//			myPutStr("\x9b" "22m");
-//		myPutStr("\n");
-	} else {
-		printf("Code the short listing.\n");
-	}
 }
 
 void TestBreak(void)
@@ -556,7 +507,7 @@ char *times(char *s, struct DateStamp *dss)
 		sprintf(s, "%02d:%02d:%02d.%02d", hours, minutes, seconds,
 				2 * (dss->ds_Tick % TICKS_PER_SECOND));
 	else
-		sprintf(s, "%02d:%02d:%02d", hours, minutes, seconds);
+		sprintf(s, "%02d:%02d", hours, minutes);
 	return (s);
 }
 

@@ -122,6 +122,7 @@ void print_many_per_line(void);
 static void print_horizontal(void);
 size_t print_file_name_and_frills(const struct fileinfo *f, size_t start_col);
 size_t length_of_file_name_and_frills(const struct fileinfo *f);
+void print_long_format(const struct fileinfo *f);
 void print_with_commas(void);
 //node *theTree = NULL;
 
@@ -225,7 +226,6 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		//myerror("queuing %s ...\n", dirname);
 		queue_directory(NULL, dirname, false);
 	}
-
 
 //	for (i = cwd_n_used; i-- != 0;) {
 //			struct fileinfo *f = sorted_file[i];
@@ -354,10 +354,14 @@ void print_current_files(void)
 			//set_normal_color ();
 			//print_long_format (sorted_file[i]);
 			//DIRED_PUTCHAR ('\n');
-			displayFib(&((struct fileinfo *) sorted_file[i])->fib);
-			print_file_name_and_frills(sorted_file[i], 0);
-			printf("\n");
-			bflush();
+
+			//displayFib(&((struct fileinfo *) sorted_file[i])->fib);
+			//print_file_name_and_frills(sorted_file[i], 0);
+			//printf("\n");
+
+			print_long_format((struct fileinfo *) sorted_file[i]);
+
+			//bflush();
 		}
 		break;
 	}
@@ -371,6 +375,7 @@ void addEntry(struct FileInfoBlock *fib)
 				cwd_n_alloc * 2 * sizeof *cwd_file);
 		cwd_n_alloc *= 2;
 	}
+
 
 	//myerror("adding %s\n",fib->fib_FileName);
 	//Remapping the fib for the highlight table to work
@@ -400,6 +405,7 @@ void addEntry(struct FileInfoBlock *fib)
 		break;
 	}
 
+
 	cwd_file[cwd_n_used].fib = *fib;
 	cwd_n_used++;
 
@@ -414,6 +420,14 @@ void addEntry(struct FileInfoBlock *fib)
 			//if (format==long_format) myerror("long_format\n");
 			//if (print_block_size) myerror("print_block_size\n");
 		}
+		if (format==long_format) {
+			len=strlen(human_readable (fib->fib_Size, buf,
+                    file_human_output_opts,
+                    1, file_output_block_size));
+			if (file_size_width < len)
+			                file_size_width = len;
+		}
+
 	}
 
 	if (print_inode) {
@@ -1042,6 +1056,13 @@ int gobble_file(char const *name, enum filetype type, long inode,
 			block_size_width = len;
 			//printf("len=%ld\n",len);
 		}
+		if (format==long_format) {
+			len=strlen(human_readable (f->fib.fib_Size, buf,
+                    file_human_output_opts,
+                    1, file_output_block_size));
+			if (file_size_width < len)
+			                file_size_width = len;
+		}
 	}
 	if (print_inode) {
 		char buf[16];
@@ -1234,46 +1255,46 @@ int gobble_file(char const *name, enum filetype type, long inode,
 //}
 
 /* Print information about F in long format.  */
-//#define EXPERIMENTAL
+#define EXPERIMENTAL
 #ifdef EXPERIMENTAL
-static size_t dired_pos;
-/* Write S to STREAM and increment DIRED_POS by S_LEN.  */
-#define DIRED_FPUTS(s, stream, s_len) \
-    do {puts (s); dired_pos += s_len;} while (0)
+//static size_t dired_pos;
+///* Write S to STREAM and increment DIRED_POS by S_LEN.  */
+//#define DIRED_FPUTS(s, stream, s_len) \
+//    do {puts (s); dired_pos += s_len;} while (0)
+//
+//static size_t print_name_with_quoting (const struct fileinfo *f,
+//		bool symlink_target,
+//		struct obstack *stack,
+//		size_t start_col)
+//{
+//	const char* name = f->fib.fib_FileName; //symlink_target ? f->linkname : f->name;
+//
+//	bool used_color_this_time
+//	= (print_with_color
+//			&& (print_color_indicator (f, symlink_target)
+//					|| is_colored (C_NORM)));
+//
+//	if (stack)
+//	PUSH_CURRENT_DIRED_POS (stack);
+//
+//	size_t width = quote_name (stdout, name, filename_quoting_options, NULL);
+//	dired_pos += width;
+//
+//	if (stack)
+//	PUSH_CURRENT_DIRED_POS (stack);
+//
+//	process_signals ();
+//	if (used_color_this_time)
+//	{
+//		prep_non_filename_text ();
+//		if (start_col / line_length != (start_col + width - 1) / line_length)
+//		put_indicator (&color_indicator[C_CLR_TO_EOL]);
+//	}
+//
+//	return width;
+//}
 
-static size_t print_name_with_quoting (const struct fileinfo *f,
-		bool symlink_target,
-		struct obstack *stack,
-		size_t start_col)
-{
-	const char* name = f->fib.fib_FileName; //symlink_target ? f->linkname : f->name;
-
-	bool used_color_this_time
-	= (print_with_color
-			&& (print_color_indicator (f, symlink_target)
-					|| is_colored (C_NORM)));
-
-	if (stack)
-	PUSH_CURRENT_DIRED_POS (stack);
-
-	size_t width = quote_name (stdout, name, filename_quoting_options, NULL);
-	dired_pos += width;
-
-	if (stack)
-	PUSH_CURRENT_DIRED_POS (stack);
-
-	process_signals ();
-	if (used_color_this_time)
-	{
-		prep_non_filename_text ();
-		if (start_col / line_length != (start_col + width - 1) / line_length)
-		put_indicator (&color_indicator[C_CLR_TO_EOL]);
-	}
-
-	return width;
-}
-
-static void print_long_format (const struct fileinfo *f)
+static void print_long_format(const struct fileinfo *f)
 {
 	char modebuf[12];
 	char buf[80];
@@ -1284,43 +1305,52 @@ static void print_long_format (const struct fileinfo *f)
 
 	p = buf;
 
-	if (print_inode)
-	{
+	p[0] = (f->fib.fib_Protection & FIBF_SCRIPT) ? 's' : '-';
+	p[1] = (f->fib.fib_Protection & FIBF_PURE) ? 'p' : '-';
+	p[2] = (f->fib.fib_Protection & FIBF_ARCHIVE) ? 'a' : '-';
+	p[3] = (f->fib.fib_Protection & FIBF_READ) ? '-' : 'r';
+	p[4] = (f->fib.fib_Protection & FIBF_WRITE) ? '-' : 'w';
+	p[5] = (f->fib.fib_Protection & FIBF_EXECUTE) ? '-' : 'x';
+	p[6] = (f->fib.fib_Protection & FIBF_DELETE) ? '-' : 'd';
+	p[7] = ' ';
+	p+=8;
+	if (print_inode) {
 		char hbuf[16];
-		sprintf (p, "%*s ", inode_number_width, format_inode (hbuf, sizeof hbuf, f));
+		sprintf(p, "%*s ", inode_number_width,
+				format_inode(hbuf, sizeof hbuf, f));
 		/* Increment by strlen (p) here, rather than by inode_number_width + 1.
 		 The latter is wrong when inode_number_width is zero.  */
-		p += strlen (p);
+		p += strlen(p);
 	}
 
-	if (print_block_size)
-	{
+	if (print_block_size) {
 		char hbuf[16];
-		char const *blocks =human_readable (f->fib.fib_NumBlocks, hbuf, human_output_opts,
+		char const *blocks = human_readable(f->fib.fib_NumBlocks, hbuf,
+				human_output_opts,
 				ST_NBLOCKSIZE, output_block_size);
 		int pad;
-		for (pad = block_size_width - mbswidth (blocks, 0); 0 < pad; pad--)
-		*p++ = ' ';
+		for (pad = block_size_width-strlen(blocks); 0 < pad; pad--)
+			*p++ = ' ';
 		while ((*p++ = *blocks++))
-		continue;
+			continue;
 		p[-1] = ' ';
 	}
 
 	/* Increment by strlen (p) here, rather than by, e.g.,
 	 sizeof modebuf - 2 + any_has_acl + 1 + nlink_width + 1.
 	 The latter is wrong when nlink_width is zero.  */
-	p += strlen (p);
+	//p += strlen(p); ALKIS
 
 	{
 		char hbuf[32];
-		char const *size =human_readable (unsigned_file_size (f->fib.fib_Size),
-				hbuf, file_human_output_opts, 1,
-				file_output_block_size);
+		char const *size = human_readable(f->fib.fib_Size, hbuf,
+				file_human_output_opts, 1, file_output_block_size);
 		int pad;
-		for (pad = file_size_width - mbswidth (size, 0); 0 < pad; pad--)
-		*p++ = ' ';
+		for (pad = file_size_width - strlen(size); 0 < pad; pad--)
+			*p++ = ' ';
+		//myerror("file_size_width: %ld\n",file_size_width);
 		while ((*p++ = *size++))
-		continue;
+			continue;
 		p[-1] = ' ';
 	}
 
@@ -1363,14 +1393,19 @@ static void print_long_format (const struct fileinfo *f)
 //                           when_local, 0, when_timespec.tv_nsec);
 //    }
 
-	if (s || !*p)
-	{
+	s=dates(p,&f->fib.fib_Date);
+	p+=10;
+	*p++=' ';
+	s=times(p,&f->fib.fib_Date);
+	//*p++=' ';
+	if (s || !*p) {
 		p += s;
 		*p++ = ' ';
 
 		/* NUL-terminate the string -- fputs (via DIRED_FPUTS) requires it.  */
 		*p = '\0';
 	}
+	//*p='\0';//ALKIS REMOVE
 //  else
 //    {
 //      /* The time cannot be converted using the desired format, so
@@ -1382,8 +1417,10 @@ static void print_long_format (const struct fileinfo *f)
 //      p += strlen (p);
 //    }
 
-	DIRED_FPUTS (buf, stdout, p - buf);
-	size_t w = print_name_with_quoting (f, false, &dired_obstack, p - buf);
+//	DIRED_FPUTS (buf, stdout, p - buf);
+//	size_t w = print_name_with_quoting (f, false, &dired_obstack, p - buf);
+
+	printf("%s %s\n", buf, f->fib.fib_FileName);
 
 //  if (f->filetype == symbolic_link)
 //    {

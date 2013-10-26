@@ -34,6 +34,7 @@ void setmem(char *buf, int n, char c);
 char *strtok(char *s, const char *delim);
 int myindex(char *str, char c);
 int strcmp(char *str1, char *str2);
+int strncmp(const char *s1,const char *s2,int n);
 int stricmp(char *str1, char *str2);
 char *strcpy(char *dst,const char *src);
 char *strdup(const char *str);
