@@ -28,8 +28,8 @@ struct column_info {
 
 /* Array with information about column filledness.  */
 static struct column_info *column_info = 0L;
-size_t *p = 0;
 struct pending *pending_dirs = 0L;
+struct plist *theplist=NULL;
 
 /* Vector of pointers to files, in proper sorted order, and the number
  of entries allocated for it.  */
@@ -120,6 +120,7 @@ size_t print_file_name_and_frills(const struct fileinfo *f, size_t start_col);
 size_t length_of_file_name_and_frills(const struct fileinfo *f);
 static void print_long_format(const struct fileinfo *f);
 void print_with_commas(void);
+void free_plist(struct plist *list);
 
 int init_structures(void)
 {
@@ -154,16 +155,11 @@ void free_structures(void)
 	if (sorted_file)
 		myfree((char * ) sorted_file);
 	if (column_info) {
-		if (p) {
-			myfree((char * )p);
-			p = 0;
-		}
-
+		free_plist(theplist);
 		myfree((char * )column_info);
 	}
 	free_pending_ent(pending_dirs);
-
-	cwd_file = sorted_file = column_info = p = pending_dirs = NULL;
+	cwd_file = sorted_file = column_info = theplist = pending_dirs = NULL;
 }
 
 void initialize_ordering_vector(void)
@@ -297,6 +293,15 @@ void free_pending_ent(struct pending *pend)
 	myfree((char * )pend);
 }
 
+void free_plist(struct plist *list)
+{
+	while(list) {
+		struct plist *next=list->next;
+		myfree(list->mem);
+		myfree(list);
+		list=next;
+	}
+}
 
 void print_current_files(void)
 {
@@ -573,8 +578,10 @@ void print_with_commas(void)
 
 void print_many_per_line(void)
 {
+
 	size_t row; /* Current row.  */
 	size_t cols = calculate_columns(true);
+
 	struct column_info const *line_fmt = &column_info[cols - 1];
 
 	/* Calculate the number of rows that will be in each column except possibly
@@ -585,22 +592,18 @@ void print_many_per_line(void)
 		size_t col = 0;
 		size_t filesno = row;
 		size_t pos = 0;
-
 		/* Print the next row.  */
 		while (1) {
 			struct fileinfo const *f = sorted_file[filesno];
-			//size_t name_length = strlen(f->fib.fib_FileName); //length_of_file_name_and_frills (f);
+
 			size_t name_length = length_of_file_name_and_frills(f);
 			size_t max_name_length = line_fmt->col_arr[col++];
 			print_file_name_and_frills(f, pos);
-
 			filesno += rows;
 			if (filesno >= cwd_n_used)
 				break;
-
 			indent(pos + name_length, pos + max_name_length);
 			pos += max_name_length;
-
 		}
 		puts("");
 	}
@@ -640,10 +643,12 @@ size_t calculate_columns(bool by_columns)
 	size_t filesno; /* Index into cwd_file.  */
 	size_t cols; /* Number of files across.  */
 
+
 	/* Normally the maximum number of columns is determined by the
 	 screen width.  But if few files are available this might limit it
 	 as well.  */
 	size_t max_cols = MIN(max_idx, cwd_n_used);
+
 
 	init_column_info();
 
@@ -742,22 +747,31 @@ size_t length_of_file_name_and_frills(const struct fileinfo *f)
 	return len;
 }
 
+
+
+
+void *allocp(int n)
+{
+	struct plist *new = (struct plist *)mymalloc(sizeof *new);
+	if (new) {
+		new->next=theplist;
+		new->mem = mymalloc(n);
+		theplist=new;
+		return new->mem;
+	}
+	return NULL;
+}
 static void init_column_info(void)
 {
 	size_t i;
 	size_t max_cols = MIN(max_idx, cwd_n_used);
-	size_t *save;
+
 	/* Currently allocated columns in column_info.  */
 	static size_t column_info_alloc;
 
 	if (column_info_alloc < max_cols) {
 		size_t new_column_info_alloc;
-
-		if (p) {
-			myfree((char * )p);
-			p = 0;
-		}
-
+		size_t *p;
 		if (max_cols < max_idx / 2) {
 			/* The number of columns is far less than the display width
 			 allows.  Grow the allocation, but only so that it's
@@ -784,7 +798,8 @@ static void init_column_info(void)
 			if (s < new_column_info_alloc || t / column_info_growth != s)
 				myerror("Dealloc and close everything\n"__FILE__);
 
-			save = p = (int *) mymalloc(t / 2 * sizeof *p);
+			p = (int *) allocp((t / 2 )* sizeof *p);
+
 			//myerror("malloc'ing %ld\n",t / 2 * sizeof *p);
 		}
 
@@ -793,19 +808,22 @@ static void init_column_info(void)
 			column_info[i].col_arr = p;
 			p += i + 1;
 		}
-		p = save;
+
 		column_info_alloc = new_column_info_alloc;
 	}
 
+	//myerror("Before the for at the bottom...max_cols:%ld (%ld)\n",max_cols,column_info_alloc);
 	for (i = 0; i < max_cols; ++i) {
 		size_t j;
-
 		column_info[i].valid_len = true;
+		//myerror("i=%ld\n",i);
 		column_info[i].line_len = (i + 1) * MIN_COLUMN_WIDTH;
-		for (j = 0; j <= i; ++j)
+		for (j = 0; j <= i; ++j) {
+			//myerror("j=%ld\n",j);
 			column_info[i].col_arr[j] = MIN_COLUMN_WIDTH;
+		}
 	}
-
+	//myerror("After the for at the bottom...\n");
 }
 
 static void print_horizontal(void)
@@ -827,8 +845,6 @@ static void print_horizontal(void)
 
 		if (col == 0) {
 			printf("\n");
-			bflush();
-
 			pos = 0;
 		} else {
 			indent(pos + name_length, pos + max_name_length);
@@ -891,7 +907,7 @@ int gobble_file(char const *name, enum filetype type, long inode,
 		cwd_file = realloc(cwd_file, cwd_n_alloc * 2 * sizeof *cwd_file);
 		cwd_n_alloc *= 2;
 	}
-
+	//printf("gobble_file: %s\n",name);
 	f = &cwd_file[cwd_n_used];
 	memset(f, '\0', sizeof *f);
 	f->fib.fib_DiskKey = inode;

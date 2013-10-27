@@ -211,10 +211,10 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					//myerror("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
 					clear_files();
 
-					//myerror("Before Dir...\n");
+					//myerror("Dir: %s\n",thispend->name);
 					Dir(thispend->name);
+					//myerror("Got back from Dir...\n");
 
-					//myerror("After Dir...\n");
 					if (format == long_format || print_block_size) {
 						const char *p;
 						char buf[LONGEST_HUMAN_READABLE + 1];
@@ -227,9 +227,10 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 						printf("total %s\n", p);
 
 					}
-					//myerror("cwd_n_used = %ld\n",cwd_n_used);
+
 					if (cwd_n_used)
 						print_current_files();
+
 					//print_dir (thispend->name, thispend->realname,thispend->command_line_arg);
 
 					free_pending_ent(thispend);

@@ -110,6 +110,11 @@ struct pending {
 	struct pending *next;
 };
 
+struct plist {
+	struct plist *next;
+	void *mem;
+};
+
 
 #define HIGHLIGHT_MAX 5
 #define HIGHLIGHT_MIN -7
