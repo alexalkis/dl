@@ -167,6 +167,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 	//Done: Recursion  (Seems to work, not fully tested...)
 	//TODO: Handle the non-existant shell substitution of amiga's CLI
 	//this will be new
+	int n_files = 0;
 	if (goon != -1) {
 		cliline = &cliline[goon];
 		arg = strtok(cliline, " ");
@@ -182,6 +183,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 				} else
 					gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
 				TestBreak();
+				++n_files;
 			} while ((arg = strtok(NULL, " ")) && !gotBreak);
 			if (!gotBreak) {
 				if (cwd_n_used) {
@@ -195,7 +197,9 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					if (pending_dirs)
 						putchar('\n');
 					//if (pending_dirs) printf("huh?%s\n",pending_dirs->realname);
-				}
+				} else if (n_files <= 1 && pending_dirs
+						&& pending_dirs->next == 0)
+					print_dir_name = false;
 				struct pending *thispend;
 				while (pending_dirs && !gotBreak) {
 
@@ -230,7 +234,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					//myerror("Dir: %s\n",thispend->name);
 					Dir(thispend->name);
 					//myerror("Got back from Dir...\n");
-					if (strlen(thispend->name))
+					if (print_dir_name && strlen(thispend->name))
 						printf("%s%s%s\n", highlight_tab[HI_USERDIR].on,
 								thispend->name, highlight_tab[HI_USERDIR].off);
 					if (format == long_format || print_block_size) {
@@ -253,8 +257,8 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 
 					free_pending_ent(thispend);
 					print_dir_name = true;
-					if (pending_dirs)
-						printf("\n");
+//					if (pending_dirs)
+//						putchar('\n');
 				}
 				clear_files();
 			}
@@ -409,7 +413,13 @@ void Dir(char *filedir)
 	char *file = "";
 	BPTR lock = 0L;
 	int noPattern;
+	static bool first = true;
 
+	if (recursive || print_dir_name) {
+		if (!first)
+			putchar('\n');
+		first = false;
+	}
 	nDirs = nFiles = nTotalSize = total_blocks = 0;
 
 	if (ContainsWildchar(filedir)) {
