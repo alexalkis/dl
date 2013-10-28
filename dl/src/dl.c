@@ -80,9 +80,9 @@ enum TIMEDATEMODE {
 int gSort = SORT_FILENAME;
 
 int gReverse = 0;
-int gDisplayMode = DISPLAY_NORMAL;
+
 int gTimeDateFormat = TIMEDATE_NORMAL;
-int gSize = SIZE_NORMAL;
+
 extern bool recursive;
 static bool immediate_dirs = 0;
 bool print_dir_name;
@@ -171,26 +171,39 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		cliline = &cliline[goon];
 		arg = strtok(cliline, " ");
 		if (init_structures()) {
-			int seenMany = 0;
+			//int seenMany = 0;
 			do {
-				gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
+				if (!strlen(arg) || !strcmp(arg, "\"\"")) {
+					if (immediate_dirs)
+						gobble_file("", directory, NOT_AN_INODE_NUMBER, true,
+								"");
+					else
+						queue_directory("", NULL, true);
+				} else
+					gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
 				TestBreak();
 			} while ((arg = strtok(NULL, " ")) && !gotBreak);
 			if (!gotBreak) {
 				if (cwd_n_used) {
-				sort_files();
-				if (!immediate_dirs)
-					extract_dirs_from_files(NULL, true);
+					sort_files();
+					if (!immediate_dirs)
+						extract_dirs_from_files(NULL, true);
 				}
 				/* 'cwd_n_used' might be zero now.  */
 				if (cwd_n_used) {
 					print_current_files();
 					if (pending_dirs)
-					        putchar('\n');
+						putchar('\n');
 					//if (pending_dirs) printf("huh?%s\n",pending_dirs->realname);
 				}
 				struct pending *thispend;
 				while (pending_dirs && !gotBreak) {
+
+//					int c = 0;
+//					for (thispend = pending_dirs; thispend;
+//							thispend = thispend->next) {
+//						printf("%d \"%s\"\n", ++c, thispend->name);
+//					}
 
 					thispend = pending_dirs;
 					pending_dirs = pending_dirs->next;
@@ -207,18 +220,19 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 						/* ASSERT_MATCHING_DEV_INO (thispend->realname, di); */
 						//assert (found);
 						//dev_ino_free (found);
-						//printf("free..\n");
+						//printf("free..--->%s\n",thispend->realname);
 						free_pending_ent(thispend);
 						continue;
 					}
 					//}
 					//myerror("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
 					clear_files();
-
 					//myerror("Dir: %s\n",thispend->name);
 					Dir(thispend->name);
 					//myerror("Got back from Dir...\n");
-					printf("%s%s%s\n",highlight_tab[HI_USERDIR].on,thispend->name,highlight_tab[HI_USERDIR].off);
+					if (strlen(thispend->name))
+						printf("%s%s%s\n", highlight_tab[HI_USERDIR].on,
+								thispend->name, highlight_tab[HI_USERDIR].off);
 					if (format == long_format || print_block_size) {
 						const char *p;
 						char buf[LONGEST_HUMAN_READABLE + 1];
@@ -302,7 +316,6 @@ int ParseSwitches(char *filedir)
 					break;
 				case 'l':
 					format = long_format;
-					gDisplayMode = DISPLAY_LONG;
 					break;
 				case 'm':
 					format = with_commas;
@@ -329,7 +342,7 @@ int ParseSwitches(char *filedir)
 				case '-':
 					if (!strcmp(f + 1, "version")) {
 						printf(
-								"dl Version 1.0 (" __DATE__ ")\nWritten by Alex Argiropoulos\n\nUses fpattern 1.08, Copyright (C) 1997-1998 David R. Tribble\n"
+								"dl Version "VERSION_STRING" (" __DATE__ ")\nWritten by Alex Argiropoulos\n\nUses fpattern 1.08, Copyright (C) 1997-1998 David R. Tribble\n"
 								"\nUses parts from:\n"
 								"ls (GNU coreutils) 8.13\n"
 								"Copyright (C) 2011 Free Software Foundation, Inc.\n"
@@ -341,6 +354,27 @@ int ParseSwitches(char *filedir)
 					} else if (!strncmp(f + 1, "time=full", 9)) {
 						gTimeDateFormat = TIMEDATE_FULL;
 						f += 9;
+					} else if (!strncmp(f + 1, "help", 9)) {
+						printf("dl Version "VERSION_STRING" (" __DATE__ ")\n"
+						"Written by Alex Argiropoulos\n\n"
+						"-1 list one file per line\n"
+						"-d list directory entries instead of contents\n"
+						"-f do not sort\n"
+						"-h print sizes in human readable format\n"
+						"-i print the index number of each file\n"
+						"-l use a long listing format\n"
+						"-m fill width with a comma separated list of entries\n"
+						"-R list subdirectories recursively\n"
+						"-r reverse order while sorting\n"
+						"-s print the allocated size of each file, in blocks\n"
+						"-S sort by file size\n"
+						"-t sort by modification time, newest first\n"
+						"-x list entries by lines instead of by columns\n"
+						"-X sort alphabetically by entry extension\n"
+						"--help display this help and exit\n"
+						"--time=full display time verbose\n"
+						"--version output version information and exit\n");
+						return -1;
 					} else {
 						myerror("%s: invalid option '-%s'\n", arg0, f);
 						return -1;
@@ -391,33 +425,21 @@ void Dir(char *filedir)
 		myerror("dl: cannot access %s - No such file or directory\n", filedir);
 		return;
 	}
-
-	//printf("Dir: %s File: %s\n",dir,file);
 	if (Examine(lock, &fib)) {
-
-		if (fib.fib_DirEntryType <= 0) {
-			strcpy(fib.fib_FileName, dir);
-			addEntry(&fib);
-		} else {
-			//if (strlen(filedir))printf("%s\n", filedir);
-			//myprintf("Directory of %s (%s):\n", fib.fib_FileName, dir);
-			while (ExNext(lock, &fib) && !gotBreak) {
-				TestBreak();
-				//if ((match(file, fib.fib_FileName) || noPattern) && !gotBreak) {
-				if ((fpattern_match(file, fib.fib_FileName) || noPattern)
-						&& !gotBreak) {
-					if (fib.fib_DirEntryType <= 0) {
-						nTotalSize += fib.fib_Size;
-						++nFiles;
-					} else {
-						++nDirs;
-						fib.fib_Size = 0; ///kludge to fix the 'sorting by size' issue
-					}
-					addEntry(&fib);
-					total_blocks += fib.fib_NumBlocks;
+		while (ExNext(lock, &fib) && !gotBreak) {
+			TestBreak();
+			if ((fpattern_match(file, fib.fib_FileName) || noPattern)
+					&& !gotBreak) {
+				if (fib.fib_DirEntryType <= 0) {
+					nTotalSize += fib.fib_Size;
+					++nFiles;
+				} else {
+					++nDirs;
+					fib.fib_Size = 0; ///kludge to fix the 'sorting by size' issue
 				}
+				addEntry(&fib);
+				total_blocks += fib.fib_NumBlocks;
 			}
-
 		}
 	} else {
 		myerror("Hmm, couldn't examine\nUse the Source Luke and fix it!\n");

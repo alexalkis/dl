@@ -186,6 +186,9 @@ char *file_name_concat(char *dirname, char *name, char *dunno)
 	int len1 = 0;
 	int len2 = strlen(name);
 	int spare = 0;
+	/* cover the dirname="" case first */
+	if (!strlen(dirname)) return strdup(name);
+
 	if (dirname) {
 		len1 = strlen(dirname);
 		if (dirname[len1 - 1] != '/' && dirname[len1 - 1] != ':')
@@ -212,7 +215,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 		/* Insert a marker entry first.  When we dequeue this marker entry,
 		 we'll know that DIRNAME has been processed and may be removed
 		 from the set of active directories.  */
-		//myerror("queuing %s ...\n", dirname);
+		//myerror("queuing \"%s\" ...\n", dirname);
 		queue_directory(NULL, dirname, false);
 	}
 
@@ -232,9 +235,8 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 				//myerror("2. queuing \"%s\" ...command_line_arg=%s\n", dirname,command_line_arg ? "TRUE" : "FALSE");
 				queue_directory(f->fib.fib_FileName, 0, command_line_arg);
 			} else {
-				//myerror("--> %s  %s\n", dirname, f->fib.fib_FileName);
-				char *name = file_name_concat(dirname, f->fib.fib_FileName,
-				NULL);
+				//myerror("--> %s + %s\n", dirname, f->fib.fib_FileName);
+				char *name = file_name_concat(dirname, f->fib.fib_FileName,NULL);
 				//myerror("----------------------> %s\n", name);
 				queue_directory(name, 0, command_line_arg);
 				myfree(name);
@@ -1235,15 +1237,16 @@ static void print_long_format(const struct fileinfo *f)
 
 	p = buf;
 
-	p[0] = (f->fib.fib_Protection & FIBF_SCRIPT) ? 's' : '-';
-	p[1] = (f->fib.fib_Protection & FIBF_PURE) ? 'p' : '-';
-	p[2] = (f->fib.fib_Protection & FIBF_ARCHIVE) ? 'a' : '-';
-	p[3] = (f->fib.fib_Protection & FIBF_READ) ? '-' : 'r';
-	p[4] = (f->fib.fib_Protection & FIBF_WRITE) ? '-' : 'w';
-	p[5] = (f->fib.fib_Protection & FIBF_EXECUTE) ? '-' : 'x';
-	p[6] = (f->fib.fib_Protection & FIBF_DELETE) ? '-' : 'd';
-	p[7] = ' ';
-	p+=8;
+	p[0]=f->fib.fib_EntryType>0 ? 'D' : '-';
+	p[1] = (f->fib.fib_Protection & FIBF_SCRIPT) ? 's' : '-';
+	p[2] = (f->fib.fib_Protection & FIBF_PURE) ? 'p' : '-';
+	p[3] = (f->fib.fib_Protection & FIBF_ARCHIVE) ? 'a' : '-';
+	p[4] = (f->fib.fib_Protection & FIBF_READ) ? '-' : 'r';
+	p[5] = (f->fib.fib_Protection & FIBF_WRITE) ? '-' : 'w';
+	p[6] = (f->fib.fib_Protection & FIBF_EXECUTE) ? '-' : 'x';
+	p[7] = (f->fib.fib_Protection & FIBF_DELETE) ? '-' : 'd';
+	p[8] = ' ';
+	p+=9;
 	if (print_inode) {
 		char hbuf[16];
 		sprintf(p, "%*s ", inode_number_width,
