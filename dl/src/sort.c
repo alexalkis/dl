@@ -9,16 +9,7 @@
 #include "human.h"
 #include "string.h"
 
-/*
- struct myNode {
- struct myNode *left;
- struct myNode *right;
- struct FileInfoBlock fib;
- };
- typedef struct myNode node;
- */
 
-/* Record of one pending directory waiting to be listed.  */
 
 struct column_info {
 	bool valid_len;
@@ -918,9 +909,9 @@ int gobble_file(char const *name, enum filetype type, long inode,
 		bool do_deref;
 		int err;
 
-		if (name[0] == '/' || dirname[0] == 0)
+		if (name[0] == '/' || dirname[0] == 0) {
 			absolute_name = (char *) name;
-		else {
+		} else {
 			ff = absolute_name = mymalloc(strlen(name) + strlen(dirname) + 2);
 			attach(absolute_name, dirname, name);
 		}

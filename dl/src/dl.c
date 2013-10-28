@@ -176,13 +176,17 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 				gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
 				TestBreak();
 			} while ((arg = strtok(NULL, " ")) && !gotBreak);
-			if (cwd_n_used && !gotBreak) {
+			if (!gotBreak) {
+				if (cwd_n_used) {
 				sort_files();
 				if (!immediate_dirs)
 					extract_dirs_from_files(NULL, true);
+				}
 				/* 'cwd_n_used' might be zero now.  */
 				if (cwd_n_used) {
 					print_current_files();
+					if (pending_dirs)
+					        putchar('\n');
 					//if (pending_dirs) printf("huh?%s\n",pending_dirs->realname);
 				}
 				struct pending *thispend;
@@ -214,16 +218,16 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					//myerror("Dir: %s\n",thispend->name);
 					Dir(thispend->name);
 					//myerror("Got back from Dir...\n");
-
+					printf("%s%s%s\n",highlight_tab[HI_USERDIR].on,thispend->name,highlight_tab[HI_USERDIR].off);
 					if (format == long_format || print_block_size) {
 						const char *p;
 						char buf[LONGEST_HUMAN_READABLE + 1];
 						p = human_readable(total_blocks, buf, human_output_opts,
 						ST_NBLOCKSIZE, output_block_size);
-						if (pending_dirs && !seenMany)
-							seenMany = 1;
-						if (seenMany)
-							printf("%s\n", thispend->name);
+//						if (pending_dirs && !seenMany)
+//							seenMany = 1;
+//						if (seenMany)
+//							printf("%s\n", thispend->name);
 						printf("total %s\n", p);
 
 					}
