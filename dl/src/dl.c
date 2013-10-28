@@ -55,7 +55,7 @@ char *times(char *s, struct DateStamp *dss);
 const char *wd(int year, int month, int day);
 
 void Dir(char *filedir);
-void displayFib(struct FileInfoBlock *fib);
+
 
 int ContainsWildchar(char *text);
 char *getDirectory(char *text);
