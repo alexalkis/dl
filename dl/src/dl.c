@@ -56,7 +56,6 @@ const char *wd(int year, int month, int day);
 
 void Dir(char *filedir);
 
-
 int ContainsWildchar(char *text);
 char *getDirectory(char *text);
 void TestBreak(void);
@@ -284,7 +283,7 @@ int ParseSwitches(char *filedir)
 {
 	char *save = filedir;
 	int notSeenEnd;
-
+	bool kibibytes_specified = false;
 	//printf("Before switch parsing '%s'\n", filedir);
 	while (*filedir) {
 		while (*filedir == ' ') //skip space
@@ -308,6 +307,9 @@ int ParseSwitches(char *filedir)
 					break;
 				case 'i':
 					print_inode = true;
+					break;
+				case 'k':
+					kibibytes_specified = true;
 					break;
 				case 'f':
 					gSort = SORT_NONE;
@@ -358,26 +360,35 @@ int ParseSwitches(char *filedir)
 					} else if (!strncmp(f + 1, "time=full", 9)) {
 						gTimeDateFormat = TIMEDATE_FULL;
 						f += 9;
+					} else if (!strncmp(f + 1, "group-directories-first", 23)) {
+						directories_first = true;
+						f += 23;
+						break;
 					} else if (!strncmp(f + 1, "help", 9)) {
-						printf("dl Version "VERSION_STRING" (" __DATE__ ")\n"
-						"Written by Alex Argiropoulos\n\n"
-						"-1 list one file per line\n"
-						"-d list directory entries instead of contents\n"
-						"-f do not sort\n"
-						"-h print sizes in human readable format\n"
-						"-i print the index number of each file\n"
-						"-l use a long listing format\n"
-						"-m fill width with a comma separated list of entries\n"
-						"-R list subdirectories recursively\n"
-						"-r reverse order while sorting\n"
-						"-s print the allocated size of each file, in blocks\n"
-						"-S sort by file size\n"
-						"-t sort by modification time, newest first\n"
-						"-x list entries by lines instead of by columns\n"
-						"-X sort alphabetically by entry extension\n"
-						"--help display this help and exit\n"
-						"--time=full display time verbose\n"
-						"--version output version information and exit\n");
+						printf(
+								"dl Version "VERSION_STRING" (" __DATE__ ")\n"
+								"Written by Alex Argiropoulos\n\n"
+								"-1 list one file per line\n"
+								"-d list directory entries instead of contents\n"
+								"-f do not sort\n"
+								"-h print sizes in human readable format\n"
+								"-i print the index number of each file\n"
+								"-k use 1024-byte blocks\n"
+								"-l use a long listing format\n"
+								"-m fill width with a comma separated list of entries\n"
+								"-R list subdirectories recursively\n"
+								"-r reverse order while sorting\n"
+								"-s print the allocated size of each file, in blocks\n"
+								"-S sort by file size\n"
+								"-t sort by modification time, newest first\n"
+								"-x list entries by lines instead of by columns\n"
+								"-X sort alphabetically by entry extension\n"
+								"--group-directories-first group directories before files\n"
+								"--help display this help and exit\n"
+								"--time=full display time verbose\n"
+								"--version output version information and exit\n"
+
+								);
 						return -1;
 					} else {
 						myerror("%s: invalid option '-%s'\n", arg0, f);
@@ -399,10 +410,18 @@ int ParseSwitches(char *filedir)
 			}
 			filedir = f;
 		} else {
-			//printf("final in parse: %s (%ld)\n", filedir, filedir - save);
-			return filedir - save;
+			break;
 		}
 	}
+
+	if (!output_block_size) {
+		output_block_size = 512;
+		if (kibibytes_specified) {
+			human_output_opts = 0;
+			output_block_size = 1024;
+		}
+	}
+	//myerror("output_block_size: %ld\n",output_block_size);
 	return filedir - save;
 }
 

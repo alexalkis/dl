@@ -83,7 +83,7 @@ typedef unsigned short security_class_t;
    - MB_LEN_MAX + 1 + 3)
 */
 
-#define LONGEST_HUMAN_READABLE	(80)
+#define LONGEST_HUMAN_READABLE	(20)
 
 /* Options for human_readable.  */
 enum

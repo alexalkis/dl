@@ -429,6 +429,10 @@ int cmp(struct FileInfoBlock *fib1, struct FileInfoBlock *fib2)
 {
 	char *s1, *s2;
 	int ret;
+	if (directories_first) {
+		ret = (fib2->fib_DirEntryType>0 ? 1 : 0) - (fib1->fib_DirEntryType>0? 1 : 0);
+		if (ret) return ret;
+	}
 	switch (gSort) {
 	case SORT_FILENAME:
 		ret = stricmp(fib1->fib_FileName, fib2->fib_FileName);
@@ -1275,7 +1279,7 @@ static void print_long_format(const struct fileinfo *f)
 	//p += strlen(p); ALKIS
 
 	{
-		char hbuf[32];
+		char hbuf[20];
 		char const *size = human_readable(f->fib.fib_Size, hbuf,
 				file_human_output_opts, 1, file_output_block_size);
 		int pad;
