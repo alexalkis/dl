@@ -140,6 +140,7 @@ stuffChar:
 			.global _stdin
 			.global _stderr
 			.global _arg0
+			.global _gotBreak
 	        .data
 
 	        .even
@@ -149,6 +150,7 @@ _stdout:	.long 0
 _stdin:	.long 0
 _stderr:	.long 0
 _arg0:		.long 0
+_gotBreak:	.long 0
 OldWindowPtr: .long 0
 _dosname:	.asciz "dos.library"
 			.even
@@ -242,16 +244,6 @@ scheck:	move.l	_SysBase,a6
 			moveml	(sp)+,d1-d3/a6
 			rts
 
-/*
-			.text
-        	.proc
-        	.globl  _zapBuffer
-_zapBuffer:	clrl	_i
-			rts
-*/
-
-
-
 
 			.text
         	.proc
@@ -259,12 +251,15 @@ _zapBuffer:	clrl	_i
 _putchar:
 			move.l	_i,d0
 			lea		_buffer,a0
-			moveb	7(sp),(a0,d0:l)
+			moveb	7(sp),d1
+			moveb	d1,(a0,d0:l)
 			addql	#1,d0
 			move.l	d0,_i
 			cmpl	#BUFFERSIZE,d0
-			jle		.putcok
-			jbsr	_bflush
+			jeq		.flushit
+			cmp.b	#'\n',d1
+			jne		.putcok
+.flushit:	jbsr	_bflush
 .putcok:	rts
 
 
@@ -322,8 +317,8 @@ ALLOWFREENULL = 0
         .globl  _realfree
 _realfree:
 		.ifgt ALLOWFREENULL
-		tst.l	a0
-		jeq		.nof
+		tst.l	a0				| check for null
+		jeq		.nof			| and don't attempt to free it
 		.endif
 		move.l	a6,-(sp)
 		lea		-4(a0),a1		|Put in sys reg

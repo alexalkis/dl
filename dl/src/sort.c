@@ -9,8 +9,6 @@
 #include "human.h"
 #include "string.h"
 
-
-
 struct column_info {
 	bool valid_len;
 	size_t line_len;
@@ -20,7 +18,7 @@ struct column_info {
 /* Array with information about column filledness.  */
 static struct column_info *column_info = 0L;
 struct pending *pending_dirs = 0L;
-struct plist *theplist=NULL;
+struct plist *theplist = NULL;
 
 /* Vector of pointers to files, in proper sorted order, and the number
  of entries allocated for it.  */
@@ -187,7 +185,8 @@ char *file_name_concat(char *dirname, char *name, char *dunno)
 	int len2 = strlen(name);
 	int spare = 0;
 	/* cover the dirname="" case first */
-	if (!strlen(dirname)) return strdup(name);
+	if (!strlen(dirname))
+		return strdup(name);
 
 	if (dirname) {
 		len1 = strlen(dirname);
@@ -236,7 +235,8 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 				queue_directory(f->fib.fib_FileName, 0, command_line_arg);
 			} else {
 				//myerror("--> %s + %s\n", dirname, f->fib.fib_FileName);
-				char *name = file_name_concat(dirname, f->fib.fib_FileName,NULL);
+				char *name = file_name_concat(dirname, f->fib.fib_FileName,
+						NULL);
 				//myerror("----------------------> %s\n", name);
 				queue_directory(name, 0, command_line_arg);
 				myfree(name);
@@ -288,11 +288,11 @@ void free_pending_ent(struct pending *pend)
 
 void free_plist(struct plist *list)
 {
-	while(list) {
-		struct plist *next=list->next;
+	while (list) {
+		struct plist *next = list->next;
 		myfree(list->mem);
 		myfree(list);
-		list=next;
+		list = next;
 	}
 }
 
@@ -304,35 +304,23 @@ void print_current_files(void)
 	case one_per_line:
 		for (i = 0; i < cwd_n_used && !gotBreak; i++) {
 			print_file_name_and_frills(sorted_file[i], 0);
-			write("\n",1);//putchar('\n');
+			putchar('\n');
 		}
 		break;
-
 	case many_per_line:
 		print_many_per_line();
 		break;
-
 	case horizontal:
 		print_horizontal();
 		break;
-
 	case with_commas:
 		print_with_commas();
 		break;
 
 	case long_format:
 		for (i = 0; !gotBreak && i < cwd_n_used; i++) {
-			//set_normal_color ();
-			//print_long_format (sorted_file[i]);
-			//DIRED_PUTCHAR ('\n');
-
-			//displayFib(&((struct fileinfo *) sorted_file[i])->fib);
-			//print_file_name_and_frills(sorted_file[i], 0);
-			//printf("\n");
-
 			print_long_format((struct fileinfo *) sorted_file[i]);
-
-			//bflush();
+			putchar('\n');
 		}
 		break;
 	}
@@ -347,7 +335,6 @@ void addEntry(struct FileInfoBlock *fib)
 				cwd_n_alloc * 2 * sizeof *cwd_file);
 		cwd_n_alloc *= 2;
 	}
-
 
 	//myerror("adding %s\n",fib->fib_FileName);
 	//Remapping the fib for the highlight table to work
@@ -377,7 +364,6 @@ void addEntry(struct FileInfoBlock *fib)
 		break;
 	}
 
-
 	cwd_file[cwd_n_used].fib = *fib;
 	cwd_n_used++;
 
@@ -392,12 +378,12 @@ void addEntry(struct FileInfoBlock *fib)
 			//if (format==long_format) myerror("long_format\n");
 			//if (print_block_size) myerror("print_block_size\n");
 		}
-		if (format==long_format) {
-			len=strlen(human_readable (fib->fib_Size, buf,
-                    file_human_output_opts,
-                    1, file_output_block_size));
+		if (format == long_format) {
+			len = strlen(
+					human_readable(fib->fib_Size, buf, file_human_output_opts,
+							1, file_output_block_size));
 			if (file_size_width < len)
-			                file_size_width = len;
+				file_size_width = len;
 		}
 
 	}
@@ -430,8 +416,10 @@ int cmp(struct FileInfoBlock *fib1, struct FileInfoBlock *fib2)
 	char *s1, *s2;
 	int ret;
 	if (directories_first) {
-		ret = (fib2->fib_DirEntryType>0 ? 1 : 0) - (fib1->fib_DirEntryType>0? 1 : 0);
-		if (ret) return ret;
+		ret = (fib2->fib_DirEntryType > 0 ? 1 : 0)
+				- (fib1->fib_DirEntryType > 0 ? 1 : 0);
+		if (ret)
+			return ret;
 	}
 	switch (gSort) {
 	case SORT_FILENAME:
@@ -468,28 +456,28 @@ int cmp(struct FileInfoBlock *fib1, struct FileInfoBlock *fib2)
 ///source: http://en.wikibooks.org/wiki/Algorithm_Implementation/Sorting/Quicksort#C
 #define MAX 64            /* stack size for max 2^(64/2) array elements  */
 void quicksort_iterative(struct fileinfo **array, unsigned len) {
-   unsigned left = 0, stack[MAX], pos = 0, seed = 1971;//rand();
-   unsigned right;
+	unsigned left = 0, stack[MAX], pos = 0, seed = 1971;		//rand();
+	unsigned right;
 
-   for ( ; ; ) {                                           /* outer loop */
-      for (; left+1 < len; len++) {                /* sort left to len-1 */
-         if (pos == MAX) len = stack[pos = 0];  /* stack overflow, reset */
-         struct fileinfo * pivot = array[left+seed%(len-left)];  /* pick random pivot */
-         seed = seed*69069+1;                /* next pseudorandom number */
-         stack[pos++] = len;                    /* sort right part later */
-         for (right = left-1; ; ) { /* inner loop: partitioning */
-            while (cmp(array[++right],pivot)<0);  /* look for greater element */
-            while (cmp(pivot,array[--len])<0);    /* look for smaller element */
-            if (right >= len) break;           /* partition point found? */
-            struct fileinfo * temp = array[right];
-            array[right] = array[len];                  /* the only swap */
-            array[len] = temp;
-         }                            /* partitioned, continue left part */
-      }
-      if (pos == 0) break;                               /* stack empty? */
-      left = len;                             /* left to right is sorted */
-      len = stack[--pos];                      /* get next range to sort */
-   }
+	for (;; ) { /* outer loop */
+		for (; left+1 < len; len++) { /* sort left to len-1 */
+			if (pos == MAX) len = stack[pos = 0]; /* stack overflow, reset */
+			struct fileinfo * pivot = array[left+seed%(len-left)]; /* pick random pivot */
+			seed = seed*69069+1; /* next pseudorandom number */
+			stack[pos++] = len; /* sort right part later */
+			for (right = left-1;; ) { /* inner loop: partitioning */
+				while (cmp(array[++right],pivot)<0); /* look for greater element */
+				while (cmp(pivot,array[--len])<0); /* look for smaller element */
+				if (right >= len) break; /* partition point found? */
+				struct fileinfo * temp = array[right];
+				array[right] = array[len]; /* the only swap */
+				array[len] = temp;
+			} /* partitioned, continue left part */
+		}
+		if (pos == 0) break; /* stack empty? */
+		left = len; /* left to right is sorted */
+		len = stack[--pos]; /* get next range to sort */
+	}
 }
 #else
 /* Well shell sort cause:
@@ -551,10 +539,8 @@ void print_with_commas(void)
 	for (filesno = 0; filesno < cwd_n_used; filesno++) {
 		struct fileinfo const *f = sorted_file[filesno];
 		size_t len = length_of_file_name_and_frills(f);
-
 		if (filesno != 0) {
 			char separator;
-
 			if (pos + len + 2 < line_length) {
 				pos += 2;
 				separator = ' ';
@@ -562,11 +548,9 @@ void print_with_commas(void)
 				pos = 0;
 				separator = '\n';
 			}
-
 			putchar(',');
 			putchar(separator);
 		}
-
 		print_file_name_and_frills(f, pos);
 		pos += len;
 	}
@@ -602,7 +586,7 @@ void print_many_per_line(void)
 			indent(pos + name_length, pos + max_name_length);
 			pos += max_name_length;
 		}
-		puts("");
+		putchar('\n');
 	}
 }
 
@@ -614,7 +598,7 @@ static char * format_inode(char *buf, size_t buflen, const struct fileinfo *f)
 }
 size_t print_file_name_and_frills(const struct fileinfo *f, size_t start_col)
 {
-	int i;
+
 	char buf[LONGEST_HUMAN_READABLE + 1];
 
 	//myerror("----> %ld %ld\n",inode_number_width,f->fib.fib_DiskKey);
@@ -640,12 +624,10 @@ size_t calculate_columns(bool by_columns)
 	size_t filesno; /* Index into cwd_file.  */
 	size_t cols; /* Number of files across.  */
 
-
 	/* Normally the maximum number of columns is determined by the
 	 screen width.  But if few files are available this might limit it
 	 as well.  */
 	size_t max_cols = MIN(max_idx, cwd_n_used);
-
 
 	init_column_info();
 
@@ -744,16 +726,13 @@ size_t length_of_file_name_and_frills(const struct fileinfo *f)
 	return len;
 }
 
-
-
-
 void *allocp(int n)
 {
-	struct plist *new = (struct plist *)mymalloc(sizeof *new);
+	struct plist *new = (struct plist *) mymalloc(sizeof *new);
 	if (new) {
-		new->next=theplist;
+		new->next = theplist;
 		new->mem = mymalloc(n);
-		theplist=new;
+		theplist = new;
 		return new->mem;
 	}
 	return NULL;
@@ -795,7 +774,7 @@ static void init_column_info(void)
 			if (s < new_column_info_alloc || t / column_info_growth != s)
 				myerror("Dealloc and close everything\n"__FILE__);
 
-			p = (int *) allocp((t / 2 )* sizeof *p);
+			p = (int *) allocp((t / 2) * sizeof *p);
 
 			//myerror("malloc'ing %ld\n",t / 2 * sizeof *p);
 		}
@@ -841,7 +820,7 @@ static void print_horizontal(void)
 		size_t col = filesno % cols;
 
 		if (col == 0) {
-			printf("\n");
+			putchar('\n');
 			pos = 0;
 		} else {
 			indent(pos + name_length, pos + max_name_length);
@@ -854,8 +833,7 @@ static void print_horizontal(void)
 		name_length = length_of_file_name_and_frills(f);
 		max_name_length = line_fmt->col_arr[col];
 	}
-	printf("\n");
-
+	putchar('\n');
 }
 
 void attach(char *dest, const char *dirname, const char *name)
@@ -926,7 +904,6 @@ int gobble_file(char const *name, enum filetype type, long inode,
 			err = stat(absolute_name, f);
 			do_deref = true;
 			break;
-
 		case DEREF_COMMAND_LINE_ARGUMENTS:
 		case DEREF_COMMAND_LINE_SYMLINK_TO_DIR:
 			if (command_line_arg) {
@@ -949,8 +926,11 @@ int gobble_file(char const *name, enum filetype type, long inode,
 			}
 
 		default: /* DEREF_NEVER */
+
+
 			err = stat(absolute_name, f);
-			strcpy(f->fib.fib_FileName, absolute_name);
+			if (*absolute_name)
+				strcpy(f->fib.fib_FileName, absolute_name);
 
 			do_deref = false;
 			break;
@@ -961,7 +941,7 @@ int gobble_file(char const *name, enum filetype type, long inode,
 			 an exit status of 2.  For other files, stat failure
 			 provokes an exit status of 1.  */
 			//file_failure (command_line_arg,_("cannot access %s"), absolute_name);
-			myerror("%s: cannot access %s [%ld]\n",arg0, absolute_name, errno);
+			myerror("%s: cannot access %s [%ld]\n", arg0, absolute_name, errno);
 			if (command_line_arg) {
 				if (ff)
 					myfree(ff);
@@ -992,12 +972,12 @@ int gobble_file(char const *name, enum filetype type, long inode,
 			block_size_width = len;
 			//printf("len=%ld\n",len);
 		}
-		if (format==long_format) {
-			len=strlen(human_readable (f->fib.fib_Size, buf,
-                    file_human_output_opts,
-                    1, file_output_block_size));
+		if (format == long_format) {
+			len = strlen(
+					human_readable(f->fib.fib_Size, buf, file_human_output_opts,
+							1, file_output_block_size));
 			if (file_size_width < len)
-			                file_size_width = len;
+				file_size_width = len;
 		}
 	}
 	if (print_inode) {
@@ -1012,227 +992,9 @@ int gobble_file(char const *name, enum filetype type, long inode,
 	return f->fib.fib_NumBlocks;
 }
 
-//bool print_dir_name;
-//static int dired_pos;
-//#define DIRED_PUTCHAR(c) do {bputchar ((c)); ++dired_pos;} while (0)
-///* Write S to STREAM and increment DIRED_POS by S_LEN.  */
-//#define DIRED_FPUTS(s, stream, s_len) \
-//    do {fputs (s, stream); dired_pos += s_len;} while (0)
-//
-///* Like DIRED_FPUTS, but for use when S is a literal string.  */
-//#define DIRED_FPUTS_LITERAL(s, stream) \
-//    do {fputs (s, stream); dired_pos += sizeof (s) - 1;} while (0)
-//
-//#define DIRED_INDENT()							\
-//    do									\
-//      {									\
-//        if (dired)							\
-//          DIRED_FPUTS_LITERAL ("  ", stdout);				\
-//      }									\
-//    while (0)
-//
-//void print_dir (char const *name, char const *realname, bool command_line_arg)
-//{
-//	__aligned struct FileInfoBlock fib;
-//	BPTR dirp = 0L;
-//	ULONG total_blocks = 0;
-//	static bool first = true;
-//
-//
-//  dirp = Lock(name,SHARED_LOCK);
-//  if (!dirp)
-//    {
-//      myerror("cannot open directory %s", name);
-//      return;
-//    }
-//
-////  if (LOOP_DETECT)
-////    {
-////      struct stat dir_stat;
-////      int fd = dirfd (dirp);
-////
-////      /* If dirfd failed, endure the overhead of using stat.  */
-////      if ((0 <= fd
-////           ? fstat (fd, &dir_stat)
-////           : stat (name, &dir_stat)) < 0)
-////        {
-////          file_failure (command_line_arg,
-////                        _("cannot determine device and inode of %s"), name);
-////          closedir (dirp);
-////          return;
-////        }
-////
-////      /* If we've already visited this dev/inode pair, warn that
-////         we've found a loop, and do not process this directory.  */
-////      if (visit_dir (dir_stat.st_dev, dir_stat.st_ino))
-////        {
-////          error (0, 0, _("%s: not listing already-listed directory"),
-////                 quotearg_colon (name));
-////          closedir (dirp);
-////          set_exit_status (true);
-////          return;
-////        }
-////
-////      dev_ino_push (dir_stat.st_dev, dir_stat.st_ino);
-////    }
-//
-//  if (recursive || print_dir_name)
-//    {
-//      if (!first)
-//        DIRED_PUTCHAR ('\n');
-//      first = false;
-//      DIRED_INDENT ();
-//      PUSH_CURRENT_DIRED_POS (&subdired_obstack);
-//      dired_pos += quote_name (stdout, realname ? realname : name,
-//                               dirname_quoting_options, NULL);
-//      PUSH_CURRENT_DIRED_POS (&subdired_obstack);
-//      DIRED_FPUTS_LITERAL (":\n", stdout);
-//    }
-//
-//  /* Read the directory entries, and insert the subfiles into the 'cwd_file'
-//     table.  */
-//
-//  clear_files ();
-//
-//  while (1)
-//    {
-//      /* Set errno to zero so we can distinguish between a readdir failure
-//         and when readdir simply finds that there are no more entries.  */
-//      errno = 0;
-//      next = readdir (dirp);
-//      if (next)
-//        {
-//          if (! file_ignored (next->d_name))
-//            {
-//              enum filetype type = unknown;
-//
-//#if HAVE_STRUCT_DIRENT_D_TYPE
-//              switch (next->d_type)
-//                {
-//                case DT_BLK:  type = blockdev;		break;
-//                case DT_CHR:  type = chardev;		break;
-//                case DT_DIR:  type = directory;		break;
-//                case DT_FIFO: type = fifo;		break;
-//                case DT_LNK:  type = symbolic_link;	break;
-//                case DT_REG:  type = normal;		break;
-//                case DT_SOCK: type = sock;		break;
-//# ifdef DT_WHT
-//                case DT_WHT:  type = whiteout;		break;
-//# endif
-//                }
-//#endif
-//              total_blocks += gobble_file (next->d_name, type,
-//                                           RELIABLE_D_INO (next),
-//                                           false, name);
-//
-//              /* In this narrow case, print out each name right away, so
-//                 ls uses constant memory while processing the entries of
-//                 this directory.  Useful when there are many (millions)
-//                 of entries in a directory.  */
-//              if (format == one_per_line && sort_type == sort_none
-//                      && !print_block_size && !recursive)
-//                {
-//                  /* We must call sort_files in spite of
-//                     "sort_type == sort_none" for its initialization
-//                     of the sorted_file vector.  */
-//                  sort_files ();
-//                  print_current_files ();
-//                  clear_files ();
-//                }
-//            }
-//        }
-//      else if (errno != 0)
-//        {
-//          file_failure (command_line_arg, _("reading directory %s"), name);
-//          if (errno != EOVERFLOW)
-//            break;
-//        }
-//      else
-//        break;
-//
-//      /* When processing a very large directory, and since we've inhibited
-//         interrupts, this loop would take so long that ls would be annoyingly
-//         uninterruptible.  This ensures that it handles signals promptly.  */
-//      process_signals ();
-//    }
-//
-//  if (closedir (dirp) != 0)
-//    {
-//      file_failure (command_line_arg, _("closing directory %s"), name);
-//      /* Don't return; print whatever we got.  */
-//    }
-//
-//  /* Sort the directory contents.  */
-//  sort_files ();
-//
-//  /* If any member files are subdirectories, perhaps they should have their
-//     contents listed rather than being mentioned here as files.  */
-//
-//  if (recursive)
-//    extract_dirs_from_files (name, false);
-//
-//  if (format == long_format || print_block_size)
-//    {
-//      const char *p;
-//      char buf[LONGEST_HUMAN_READABLE + 1];
-//
-//      DIRED_INDENT ();
-//      p = _("total");
-//      DIRED_FPUTS (p, stdout, strlen (p));
-//      DIRED_PUTCHAR (' ');
-//      p = human_readable (total_blocks, buf, human_output_opts,
-//                          ST_NBLOCKSIZE, output_block_size);
-//      DIRED_FPUTS (p, stdout, strlen (p));
-//      DIRED_PUTCHAR ('\n');
-//    }
-//
-//  if (cwd_n_used)
-//    print_current_files ();
-//}
-
-/* Print information about F in long format.  */
-#define EXPERIMENTAL
-#ifdef EXPERIMENTAL
-//static size_t dired_pos;
-///* Write S to STREAM and increment DIRED_POS by S_LEN.  */
-//#define DIRED_FPUTS(s, stream, s_len) \
-//    do {puts (s); dired_pos += s_len;} while (0)
-//
-//static size_t print_name_with_quoting (const struct fileinfo *f,
-//		bool symlink_target,
-//		struct obstack *stack,
-//		size_t start_col)
-//{
-//	const char* name = f->fib.fib_FileName; //symlink_target ? f->linkname : f->name;
-//
-//	bool used_color_this_time
-//	= (print_with_color
-//			&& (print_color_indicator (f, symlink_target)
-//					|| is_colored (C_NORM)));
-//
-//	if (stack)
-//	PUSH_CURRENT_DIRED_POS (stack);
-//
-//	size_t width = quote_name (stdout, name, filename_quoting_options, NULL);
-//	dired_pos += width;
-//
-//	if (stack)
-//	PUSH_CURRENT_DIRED_POS (stack);
-//
-//	process_signals ();
-//	if (used_color_this_time)
-//	{
-//		prep_non_filename_text ();
-//		if (start_col / line_length != (start_col + width - 1) / line_length)
-//		put_indicator (&color_indicator[C_CLR_TO_EOL]);
-//	}
-//
-//	return width;
-//}
-
 static void print_long_format(const struct fileinfo *f)
 {
-	char modebuf[12];
+	//char modebuf[12];
 	char buf[80];
 	size_t s;
 	char *p;
@@ -1241,7 +1003,7 @@ static void print_long_format(const struct fileinfo *f)
 
 	p = buf;
 
-	p[0]=f->fib.fib_EntryType>0 ? 'D' : '-';
+	p[0] = f->fib.fib_EntryType > 0 ? 'D' : '-';
 	p[1] = (f->fib.fib_Protection & FIBF_SCRIPT) ? 's' : '-';
 	p[2] = (f->fib.fib_Protection & FIBF_PURE) ? 'p' : '-';
 	p[3] = (f->fib.fib_Protection & FIBF_ARCHIVE) ? 'a' : '-';
@@ -1250,9 +1012,9 @@ static void print_long_format(const struct fileinfo *f)
 	p[6] = (f->fib.fib_Protection & FIBF_EXECUTE) ? '-' : 'x';
 	p[7] = (f->fib.fib_Protection & FIBF_DELETE) ? '-' : 'd';
 	p[8] = ' ';
-	p+=9;
+	p += 9;
 	if (print_inode) {
-		char hbuf[16];
+		char hbuf[LONGEST_HUMAN_READABLE + 1];
 		sprintf(p, "%*s ", inode_number_width,
 				format_inode(hbuf, sizeof hbuf, f));
 		/* Increment by strlen (p) here, rather than by inode_number_width + 1.
@@ -1261,12 +1023,12 @@ static void print_long_format(const struct fileinfo *f)
 	}
 
 	if (print_block_size) {
-		char hbuf[16];
+		char hbuf[LONGEST_HUMAN_READABLE + 1];
 		char const *blocks = human_readable(f->fib.fib_NumBlocks, hbuf,
 				human_output_opts,
 				ST_NBLOCKSIZE, output_block_size);
 		int pad;
-		for (pad = block_size_width-strlen(blocks); 0 < pad; pad--)
+		for (pad = block_size_width - strlen(blocks); 0 < pad; pad--)
 			*p++ = ' ';
 		while ((*p++ = *blocks++))
 			continue;
@@ -1277,9 +1039,9 @@ static void print_long_format(const struct fileinfo *f)
 	 sizeof modebuf - 2 + any_has_acl + 1 + nlink_width + 1.
 	 The latter is wrong when nlink_width is zero.  */
 	//p += strlen(p); ALKIS
-
 	{
-		char hbuf[20];
+
+		char hbuf[LONGEST_HUMAN_READABLE + 1];
 		char const *size = human_readable(f->fib.fib_Size, hbuf,
 				file_human_output_opts, 1, file_output_block_size);
 		int pad;
@@ -1295,10 +1057,10 @@ static void print_long_format(const struct fileinfo *f)
 	s = 0;
 	*p = '\1';
 
-	s=dates(p,&f->fib.fib_Date);
-	p+=10;
-	*p++=' ';
-	s=times(p,&f->fib.fib_Date);
+	s = dates(p, &f->fib.fib_Date);
+	p += 10;
+	*p++ = ' ';
+	s = times(p, &f->fib.fib_Date);
 	//*p++=' ';
 	if (s || !*p) {
 		p += s;
@@ -1310,7 +1072,7 @@ static void print_long_format(const struct fileinfo *f)
 
 	//	size_t w = print_name_with_quoting (f, false, &dired_obstack, p - buf);
 
-	printf("%s %s\n", buf, f->fib.fib_FileName);
+	printf("%s %s", buf, f->fib.fib_FileName);
 
 //  if (f->filetype == symbolic_link)
 //    {
@@ -1325,4 +1087,4 @@ static void print_long_format(const struct fileinfo *f)
 //  else if (indicator_style != none)
 //    print_type_indicator (f->stat_ok, f->stat.st_mode, f->filetype);
 }
-#endif
+

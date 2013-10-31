@@ -488,46 +488,6 @@ human_options (char const *spec, int *opts, uintmax_t *block_size)
 #include "stdio.h"
 #include "strings.h"
 
-
-
-#ifdef OWNHUMAN
-extern int block_size_width;
-static const char power_letter2[] = { 'b', /* not used */
-'K', /* kibi ('k' for kilo is a special case) */
-'M', /* mega or mebi */
-'G', /* giga or gibi */
-'T', /* tera or tebi */
-'P', /* peta or pebi */
-'E', /* exa or exbi */
-'Z', /* zetta or 2**70 */
-'Y' /* yotta or 2**80 */
-};
-
-/* TODO: Improve this */
-char *human_readable2(int n, char *buf, int opts, int from_block_size,
-		int to_block_size)
-{
-	int s = 0;
-	if (opts & human_autoscale) {
-		n = n * from_block_size;
-		int cn = n;
-		while (cn / 1024) {
-			++s;
-			n = (n + 511) >> 10; ///1024;
-			cn = (cn + 511) >> 10; // / 1024;
-		}
-	}
-
-	sprintf(buf, "%*d", block_size_width - 1, n);
-	if (opts & human_autoscale) {
-		int len = strlen(buf);
-		buf[len] = power_letter2[s];
-		buf[len + 1] = '\0';
-	}
-	return buf;
-}
-#endif
-
 static char *
 group_number(char *number, size_t numberlen, char const *grouping,
 		char const *thousands_sep)
@@ -762,7 +722,8 @@ human_readable(int n, char *buf, int opts, int from_block_size,
 		} while ((amt /= 10) != 0);
 	}
 
-do_grouping: if (opts & human_group_digits)
+	/*	do_grouping:*/
+	if (opts & human_group_digits)
 		p = group_number(p, integerlim - p, grouping, thousands_sep);
 
 	if (opts & human_SI) {

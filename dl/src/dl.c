@@ -54,7 +54,7 @@ char *dates(char *s, struct DateStamp *dss);
 char *times(char *s, struct DateStamp *dss);
 const char *wd(int year, int month, int day);
 
-void Dir(char *filedir);
+void Dir(struct pending *pend);
 
 int ContainsWildchar(char *text);
 char *getDirectory(char *text);
@@ -68,7 +68,6 @@ extern struct DosLibrary *DOSBase;
 extern struct ExecBase *SysBase;
 
 static struct DateStamp Now;
-int gotBreak = 0;
 
 enum SIZEMODE {
 	SIZE_NORMAL = 0, SIZE_BLOCKS
@@ -84,6 +83,7 @@ int gTimeDateFormat = TIMEDATE_NORMAL;
 
 extern bool recursive;
 static bool immediate_dirs = 0;
+unsigned long bsize = 0;
 bool print_dir_name;
 LONG errno;
 
@@ -116,7 +116,9 @@ int OSVersion;
 struct highlight highlight_cursor = { "\x9b" " p", "\x9b" "0 p", 0 };
 int windowWidth = 77;
 int windowHeight = 30;
-int nDirs, nFiles, nTotalSize, total_blocks;
+int nDirs, nFiles, nTotalSize, ntotal_blocks;
+int gDirs, gFiles, gTotalSize, gtotal_blocks;
+int summarise = 0;
 
 extern char *arg0;
 
@@ -141,6 +143,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 	if (OSVersion == 13) {
 		highlight_tab = &highlight_tabx13[7];
 	}
+	gDirs = gFiles = gTotalSize = gtotal_blocks = 0;
 	printf("%s", highlight_cursor.off);
 	cliline[linelen - 1] = '\0';
 	//printf("going in..,\n");bflush();
@@ -231,16 +234,19 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					//myerror("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
 					clear_files();
 					//myerror("Dir: %s\n",thispend->name);
-					Dir(thispend->name);
+					Dir(thispend);
 					//myerror("Got back from Dir...\n");
-					if (print_dir_name && strlen(thispend->name))
+					if (print_dir_name)
 						printf("%s%s%s\n", highlight_tab[HI_USERDIR].on,
-								thispend->name, highlight_tab[HI_USERDIR].off);
+								*thispend->name ?
+										thispend->name : thispend->realname,
+								highlight_tab[HI_USERDIR].off);
 					if (format == long_format || print_block_size) {
 						const char *p;
 						char buf[LONGEST_HUMAN_READABLE + 1];
-						p = human_readable(total_blocks, buf, human_output_opts,
-						ST_NBLOCKSIZE, output_block_size);
+						p = human_readable(ntotal_blocks, buf,
+								human_output_opts,
+								ST_NBLOCKSIZE, output_block_size);
 //						if (pending_dirs && !seenMany)
 //							seenMany = 1;
 //						if (seenMany)
@@ -251,6 +257,17 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 
 					if (cwd_n_used)
 						print_current_files();
+					if (summarise) {
+						printf(
+								"Dirs: %ld Files: %ld Blocks: %ld (%ld blocksize) Bytes: %ld\n",
+								nDirs, nFiles, ntotal_blocks, bsize,
+								nTotalSize);
+						++summarise;
+					}
+					gDirs += nDirs;
+					gFiles += nFiles;
+					gtotal_blocks += ntotal_blocks;
+					gTotalSize += nTotalSize;
 
 					//print_dir (thispend->name, thispend->realname,thispend->command_line_arg);
 
@@ -264,6 +281,10 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 			free_structures();
 		}
 	}
+	if (summarise > 2)
+		printf(
+				"\2331mDirs: %ld Files: %ld Blocks: %ld (%ld blocksize) Bytes: %ld\2330m\n",
+				gDirs, gFiles, gtotal_blocks, bsize, gTotalSize);
 	printf("%s", highlight_cursor.on);
 //	procp->pr_WindowPtr = OldWindowPtr;
 	return 0;
@@ -360,6 +381,9 @@ int ParseSwitches(char *filedir)
 					} else if (!strncmp(f + 1, "time=full", 9)) {
 						gTimeDateFormat = TIMEDATE_FULL;
 						f += 9;
+					} else if (!strncmp(f + 1, "sum", 3)) {
+						summarise = 1;
+						f += 3;
 					} else if (!strncmp(f + 1, "group-directories-first", 23)) {
 						directories_first = true;
 						f += 23;
@@ -385,6 +409,7 @@ int ParseSwitches(char *filedir)
 								"-X sort alphabetically by entry extension\n"
 								"--group-directories-first group directories before files\n"
 								"--help display this help and exit\n"
+								"--sum show summary of dirs, files, blocks and bytes\n"
 								"--time=full display time verbose\n"
 								"--version output version information and exit\n"
 
@@ -425,9 +450,33 @@ int ParseSwitches(char *filedir)
 	return filedir - save;
 }
 
-void Dir(char *filedir)
+/* numBlocks -- work out how many blocks a file takes */
+unsigned long numBlocks(const LONG size)
+{
+	unsigned long blocks;
+	/*
+	 * A data block holds fp->fs_dbytes bytes.
+	 * Files also have extension blocks,
+	 * and at least one header block.
+	 * Each header block contains some amount of header info,
+	 * and the remainder is filled with longs, each of which can
+	 * address one block.  The number of longs is held as fp->fs_varovhd.
+	 *
+	 * The algorithm used is less efficient than it could be,
+	 * but who cares: the disc access time swamps it.
+	 */
+
+	/* number of data blocks + fixed file overhead */
+	blocks = ((size + bsize - 1) / bsize) + 1;
+	/* add in header blocks */
+	blocks += (blocks / 72); //72=512/sizeof(long)-56header
+	return blocks;
+}
+
+void Dir(struct pending *pend)
 {
 	__aligned struct FileInfoBlock fib;
+	__aligned struct InfoData infodata;
 	char *dir;
 	char *file = "";
 	BPTR lock = 0L;
@@ -439,35 +488,45 @@ void Dir(char *filedir)
 			putchar('\n');
 		first = false;
 	}
-	nDirs = nFiles = nTotalSize = total_blocks = 0;
+	nDirs = nFiles = nTotalSize = ntotal_blocks = 0;
 
-	if (ContainsWildchar(filedir)) {
-		dir = getDirectory(filedir);
-		file = filedir + strlen(dir);
+	if (ContainsWildchar(pend->name)) {
+		dir = getDirectory(pend->name);
+		file = pend->name + strlen(pend->name);
 		noPattern = 0;
 	} else {
-		dir = filedir;
+		dir = pend->name;
 		noPattern = 1;
 	}
 
 	if (!(lock = Lock(dir, SHARED_LOCK))) {
-		myerror("dl: cannot access %s - No such file or directory\n", filedir);
+		myerror("dl: cannot access %s - No such file or directory\n",
+				pend->name);
 		return;
 	}
+	if (!bsize) {
+		Info(lock, &infodata);
+		bsize = infodata.id_BytesPerBlock;
+	}
+
 	if (Examine(lock, &fib)) {
+		/* We check for pend->name=="", in that case get name from fib */
+		if (!*pend->name) {
+			pend->realname = strdup(fib.fib_FileName);
+		}
 		while (ExNext(lock, &fib) && !gotBreak) {
 			TestBreak();
 			if ((fpattern_match(file, fib.fib_FileName) || noPattern)
 					&& !gotBreak) {
+				ntotal_blocks += numBlocks(fib.fib_Size);
+				nTotalSize += fib.fib_Size;
 				if (fib.fib_DirEntryType <= 0) {
-					nTotalSize += fib.fib_Size;
 					++nFiles;
 				} else {
 					++nDirs;
 					fib.fib_Size = 0; ///kludge to fix the 'sorting by size' issue
 				}
 				addEntry(&fib);
-				total_blocks += fib.fib_NumBlocks;
 			}
 		}
 	} else {
@@ -477,7 +536,7 @@ void Dir(char *filedir)
 	/* Sort the directory contents.  */
 	sort_files();
 	if (recursive && !gotBreak)
-		extract_dirs_from_files(filedir, false);
+		extract_dirs_from_files(pend->name, false);
 }
 
 void TestBreak(void)

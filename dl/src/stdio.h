@@ -14,6 +14,7 @@
 extern BPTR		stderr;
 extern BPTR		stdout;
 extern char *arg0;
+extern int gotBreak;
 int printf(const char *ctl, ...);
 int fprintf(BPTR fi,const char *ctl,...);
 int sprintf(char *buf,const char *ctl,...);
