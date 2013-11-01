@@ -1,3 +1,7 @@
+|
+| LSSUP.A - Assembly support routines for ls.c
+| Written by Justin V. McCormick 89-07-24
+|
 	.macro SYS function
 		jsr	_LVO\function(a6)
 	.endm

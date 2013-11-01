@@ -182,8 +182,13 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 								"");
 					else
 						queue_directory("", NULL, true);
-				} else
-					gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true, "");
+				} else {
+					if (ContainsWildchar(arg))
+						queue_directory(arg, NULL, true);
+					else
+						gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true,
+								"");
+				}
 				TestBreak();
 				++n_files;
 			} while ((arg = strtok(NULL, " ")) && !gotBreak);
@@ -258,10 +263,8 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					if (cwd_n_used)
 						print_current_files();
 					if (summarise) {
-						printf(
-								"Dirs: %ld Files: %ld Blocks: %ld (%ld blocksize) Bytes: %ld\n",
-								nDirs, nFiles, ntotal_blocks, bsize,
-								nTotalSize);
+						printf("Dirs: %ld Files: %ld Blocks: %ld Bytes: %ld\n",
+								nDirs, nFiles, ntotal_blocks, nTotalSize);
 						++summarise;
 					}
 					gDirs += nDirs;
@@ -273,29 +276,19 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 
 					free_pending_ent(thispend);
 					print_dir_name = true;
-//					if (pending_dirs)
-//						putchar('\n');
 				}
 				clear_files();
 			}
 			free_structures();
 		}
 	}
-	if (summarise > 2)
-		printf(
-				"\2331mDirs: %ld Files: %ld Blocks: %ld (%ld blocksize) Bytes: %ld\2330m\n",
-				gDirs, gFiles, gtotal_blocks, bsize, gTotalSize);
+	if (summarise > 2) {
+		printf("\2331mDirs: %ld Files: %ld Blocks: %ld Bytes: %ld\2330m\n",
+				gDirs, gFiles, gtotal_blocks, gTotalSize);
+	}
 	printf("%s", highlight_cursor.on);
-//	procp->pr_WindowPtr = OldWindowPtr;
 	return 0;
 }
-
-//void showTotals(void)
-//{
-//	if (cwd_n_used)
-//		printf("Files: %d Size: %d Blocks: %d  Directories: %d\n", nFiles,
-//				nTotalSize, total_blocks, nDirs);
-//}
 
 /* Parses the command line, acts on switches
  * Returns -1 for stop, else the position in cmdline that we should parse from
@@ -369,9 +362,10 @@ int ParseSwitches(char *filedir)
 				case '-':
 					if (!strcmp(f + 1, "version")) {
 						printf(
-								"dl Version "VERSION_STRING" (" __DATE__ ")\nWritten by Alex Argiropoulos\n\nUses fpattern 1.08, Copyright (C) 1997-1998 David R. Tribble\n"
-								"\nUses parts from:\n"
-								"ls (GNU coreutils) 8.13\n"
+								"dl Version "VERSION_STRING" (" __DATE__ ")\nWritten by Alex Argiropoulos\n\n"
+								"Uses fpattern 1.08, Copyright (C) 1997-1998 David R. Tribble\n"
+								"Uses parts from LS by Justin V. McCormick\n"
+								"Uses parts from ls (GNU coreutils) 8.13\n"
 								"Copyright (C) 2011 Free Software Foundation, Inc.\n"
 								"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
 								"This is free software: you are free to change and redistribute it.\n"
@@ -492,21 +486,27 @@ void Dir(struct pending *pend)
 
 	if (ContainsWildchar(pend->name)) {
 		dir = getDirectory(pend->name);
-		file = pend->name + strlen(pend->name);
+		file = pend->name + strlen(dir);
 		noPattern = 0;
 	} else {
 		dir = pend->name;
 		noPattern = 1;
 	}
 
+	//myerror("dir: %s file: %s %ld\n",dir,file,noPattern);
 	if (!(lock = Lock(dir, SHARED_LOCK))) {
 		myerror("dl: cannot access %s - No such file or directory\n",
 				pend->name);
 		return;
 	}
 	if (!bsize) {
-		Info(lock, &infodata);
-		bsize = infodata.id_BytesPerBlock;
+		if (Info(lock, &infodata)) {
+			bsize = infodata.id_BytesPerBlock;
+		} else {
+			bsize = 512;
+			myerror("%s: error on Info(), assuming 512bytes blocks. [%ld]\n",
+					arg0, IoErr());
+		}
 	}
 
 	if (Examine(lock, &fib)) {
@@ -536,7 +536,7 @@ void Dir(struct pending *pend)
 	/* Sort the directory contents.  */
 	sort_files();
 	if (recursive && !gotBreak)
-		extract_dirs_from_files(pend->name, false);
+		extract_dirs_from_files(dir, false);
 }
 
 void TestBreak(void)
@@ -553,9 +553,11 @@ void TestBreak(void)
 
 char *dates(char *s, struct DateStamp *dss)
 {
-
+	bool old=false;
 	int year, month, day;
 	static char dpm[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+	static const char *weekdayname[] =
+			{ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 	static char *nm[12] =
 			{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
@@ -575,55 +577,51 @@ char *dates(char *s, struct DateStamp *dss)
 		dpm[1] = 28;
 	for (month = 0; day >= dpm[month]; ++month)
 		day -= dpm[month];
-	int recent = Now.ds_Days - dss->ds_Days;
-	if (recent < 7) {
-		if (recent == 0)
-			sprintf(s, "%10.10s", "Today");
-		else if (recent == 1)
-			sprintf(s, "%10.10s", "Yesterday");
-		else
-			sprintf(s, "%10.10s", wd(year, month + 1, day + 1));
+	if (gTimeDateFormat == TIMEDATE_FULL) {
+		sprintf(s, "%4d-%02d-%02d", year, month + 1, day + 1);
 	} else {
-		if (recent < 365) {
-			sprintf(s, "    %02d %3s", day + 1, nm[month]);
-		} else if (recent < 2 * 365) {
-			sprintf(s, "%5s %4d", nm[month], year);
+		int recent = Now.ds_Days - dss->ds_Days;
+		if (recent < 7) {
+			if (recent == 0)
+				sprintf(s, "%10.10s", "Today");
+			else if (recent == 1)
+				sprintf(s, "%10.10s", "Yesterday");
+			else {
+				sprintf(s, "%10.10s", weekdayname[dss->ds_Days % 7]);
+				//sprintf(s, "%10.10s", wd(year, month + 1, day + 1));
+			}
 		} else {
-			if (gTimeDateFormat == TIMEDATE_HUMAN)
-				sprintf(s, "%4d years", recent / 365);
-			else
-				sprintf(s, "%02d/%02d/%04d", day + 1, month + 1, year);
+
+				sprintf(s, "    %02d %3s", day + 1, nm[month]);
+				if (recent > 365) {
+				/*
+				if (gTimeDateFormat == TIMEDATE_HUMAN)
+					sprintf(s, "%4d years", recent / 365);
+				else
+					sprintf(s, "%3d %s %2d", day + 1, nm[month], year % 100);
+				*/
+				old=true;
+			}
 		}
-		//sprintf(s, "%02ld/%02ld/%04ld", day + 1, month + 1, year);
+	}
+	char *t = s + 10;
+	*t++=' ';
+	if (old) {
+		sprintf(t,"%5d",year);
+	} else {
+		sprintf(t,"%s",times(t,dss));
 	}
 	return (s);
 }
 
 char *times(char *s, struct DateStamp *dss)
 {
-	struct tzones {
-		int from;
-		int to;
-		char *desc;
-	};
-	// @formatter:off
-	struct tzones zones[] =
-			{ { 7, 11, "morning" }, { 11, 13, "noon" }, { 13, 20, "afternoon" }, { 20, 23, "night" }, { 23, 23, "midnight" }, { 0, 0, "midnight" }, { 1, 3, "late night" }, { 3, 7, "early morn" } };
-	// @formatter:on
 	int hours, minutes, seconds;
-	int i;
-
 	seconds = dss->ds_Tick / TICKS_PER_SECOND;
 	minutes = dss->ds_Minute;
 	hours = minutes / 60;
 	minutes %= 60;
-	//sprintf(s, "%02ld:%02ld:%02ld", hours, minutes, seconds);
-	if (gTimeDateFormat == TIMEDATE_HUMAN) {
-		for (i = 0; i < sizeof(zones); ++i)
-			if (hours >= zones[i].from && hours <= zones[i].to)
-				break;
-		sprintf(s, "%-10.10s", zones[i].desc);
-	} else if (gTimeDateFormat == TIMEDATE_FULL)
+	if (gTimeDateFormat == TIMEDATE_FULL)
 		sprintf(s, "%02d:%02d:%02d.%02d", hours, minutes, seconds,
 				2 * (dss->ds_Tick % TICKS_PER_SECOND));
 	else
@@ -631,21 +629,32 @@ char *times(char *s, struct DateStamp *dss)
 	return (s);
 }
 
-const char *wd(int year, int month, int day)
-{
-	static const char *weekdayname[] =
-			{ "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
-	int JND = day + ((153 * (month + 12 * ((14 - month) / 12) - 3) + 2) / 5)
-			+ (365 * (year + 4800 - ((14 - month) / 12)))
-			+ ((year + 4800 - ((14 - month) / 12)) / 4)
-			- ((year + 4800 - ((14 - month) / 12)) / 100)
-			+ ((year + 4800 - ((14 - month) / 12)) / 400) - 32045;
-	return weekdayname[JND % 7];
-}
+/*
+ const char *wd(int year, int month, int day)
+ {
+ static const char *weekdayname[] =
+ { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+ int JND = day + ((153 * (month + 12 * ((14 - month) / 12) - 3) + 2) / 5)
+ + (365 * (year + 4800 - ((14 - month) / 12)))
+ + ((year + 4800 - ((14 - month) / 12)) / 4)
+ - ((year + 4800 - ((14 - month) / 12)) / 100)
+ + ((year + 4800 - ((14 - month) / 12)) / 400) - 32045;
+ return weekdayname[JND % 7];
+ }
+ */
 
 int ContainsWildchar(char *text)
 {
-	static char patternchars[] = "!?*[]-";
+	/* these are defined in pattern.h */
+	static char patternchars[] = {
+	FPAT_NOT,
+	FPAT_ANY,
+	FPAT_CLOS,
+	FPAT_SET_L,
+	FPAT_SET_R,
+	FPAT_SET_NOT,
+	FPAT_SET_THRU };
+
 	int i;
 	int len = strlen(patternchars);
 	for (i = 0; i < len; ++i)
@@ -654,6 +663,11 @@ int ContainsWildchar(char *text)
 	return 0;
 }
 
+/*
+ * returns the non-filename prefix
+ * ie: 	df0:foo -> returns df0:
+ * 		foo/boo -> returns foo/
+ */
 char *getDirectory(char *text)
 {
 	static char buffer[80];

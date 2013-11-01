@@ -1058,10 +1058,9 @@ static void print_long_format(const struct fileinfo *f)
 	*p = '\1';
 
 	s = dates(p, &f->fib.fib_Date);
-	p += 10;
-	*p++ = ' ';
-	s = times(p, &f->fib.fib_Date);
-	//*p++=' ';
+	p += 16; //10 for date + 1space + 5 for time
+
+
 	if (s || !*p) {
 		p += s;
 		*p++ = ' ';
