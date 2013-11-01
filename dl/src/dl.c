@@ -495,7 +495,7 @@ void Dir(struct pending *pend)
 
 	//myerror("dir: %s file: %s %ld\n",dir,file,noPattern);
 	if (!(lock = Lock(dir, SHARED_LOCK))) {
-		myerror("dl: cannot access %s - No such file or directory\n",
+		myerror("%s: cannot access %s - No such file or directory\n", arg0,
 				pend->name);
 		return;
 	}
@@ -553,7 +553,7 @@ void TestBreak(void)
 
 char *dates(char *s, struct DateStamp *dss)
 {
-	bool old=false;
+	bool old = false;
 	int year, month, day;
 	static char dpm[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 	static const char *weekdayname[] =
@@ -592,24 +592,24 @@ char *dates(char *s, struct DateStamp *dss)
 			}
 		} else {
 
-				sprintf(s, "    %02d %3s", day + 1, nm[month]);
-				if (recent > 365) {
+			sprintf(s, "    %02d %3s", day + 1, nm[month]);
+			if (recent > 365) {
 				/*
-				if (gTimeDateFormat == TIMEDATE_HUMAN)
-					sprintf(s, "%4d years", recent / 365);
-				else
-					sprintf(s, "%3d %s %2d", day + 1, nm[month], year % 100);
-				*/
-				old=true;
+				 if (gTimeDateFormat == TIMEDATE_HUMAN)
+				 sprintf(s, "%4d years", recent / 365);
+				 else
+				 sprintf(s, "%3d %s %2d", day + 1, nm[month], year % 100);
+				 */
+				old = true;
 			}
 		}
 	}
 	char *t = s + 10;
-	*t++=' ';
+	*t++ = ' ';
 	if (old) {
-		sprintf(t,"%5d",year);
+		sprintf(t, "%5d", year);
 	} else {
-		sprintf(t,"%s",times(t,dss));
+		sprintf(t, "%s", times(t, dss));
 	}
 	return (s);
 }

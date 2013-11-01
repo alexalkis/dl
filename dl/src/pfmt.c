@@ -37,12 +37,13 @@ typedef unsigned long size_t;
 
 #define MATH_BUFSIZE	32
 
-int fwrite(const void *vbuf,size_t elmsize,size_t elms,BPTR fi);
+int fwrite(const void *vbuf, size_t elmsize, size_t elms, BPTR fi);
 int _pfmtone(char c, va_list *pva,
 		unsigned int (*func)(char *, size_t, size_t, void *), void *desc,
 		short flags, short i1, short i2, int baseBytes);
 
-int _pfmt(	char *ctl,va_list va,unsigned int (*func)(char *, size_t, size_t, void *),void *desc)
+int _pfmt(char *ctl, va_list va,
+		unsigned int (*func)(char *, size_t, size_t, void *), void *desc)
 {
 	char *base = ctl;
 	char c;
@@ -180,7 +181,6 @@ int _pfmtone(char c, va_list *pva,
 	short trail_zero = 0; /*  trailing zeros from math	*/
 	short i; /*  temporary		*/
 	long *pnum;
-
 
 	switch (c) {
 	case 'c':
@@ -402,71 +402,71 @@ int _pfmtone(char c, va_list *pva,
  * vfwrite is a special write just for printf (buffered)
  * (Only stdout is buffered in astartup.S)
  */
-static int vfwrite(const void *vbuf,size_t elmsize,size_t elms,BPTR fi)
+static int vfwrite(const void *vbuf, size_t elmsize, size_t elms, BPTR fi)
 {
-	write(vbuf,elmsize*elms);
+	write(vbuf, elmsize * elms);
 }
 
 int printf(const char *ctl, ...)
 {
-    int error;
-    va_list va;
+	int error;
+	va_list va;
 
-    va_start(va, ctl);
-    error = _pfmt(ctl, va, vfwrite, stdout);
-    va_end(va);
-    return(error);      /*  count/error */
+	va_start(va, ctl);
+	error = _pfmt(ctl, va, vfwrite, stdout);
+	va_end(va);
+	return (error); /*  count/error */
 }
 
-
-int fwrite(const void *vbuf,size_t elmsize,size_t elms,BPTR fi)
+int fwrite(const void *vbuf, size_t elmsize, size_t elms, BPTR fi)
 {
-	return Write(fi,vbuf,elmsize*elms);
+	return Write(fi, vbuf, elmsize * elms);
 }
 
 void puts(const char *str)
 {
 	int len = strlen(str);
-	if (len) write(str, len);
-	write("\n",1);
+	if (len)
+		write(str, len);
+	write("\n", 1);
 }
 
-int fprintf(BPTR fi,const char *ctl,...)
+int fprintf(BPTR fi, const char *ctl, ...)
 {
-    int error;
-    va_list va;
+	int error;
+	va_list va;
 
-    va_start(va, ctl);
-    error = _pfmt(ctl, va, fwrite, fi);
-    va_end(va);
-    return(error);      /*  count/error */
+	va_start(va, ctl);
+	error = _pfmt(ctl, va, fwrite, fi);
+	va_end(va);
+	return (error); /*  count/error */
 }
 
-static unsigned int _swrite(char *buf,size_t n1,size_t n2,const char **sst)
+static unsigned int _swrite(char *buf, size_t n1, size_t n2, const char **sst)
 {
-    size_t n;
+	size_t n;
 
-    if (n1 == 1)
-	n = n2;
-    else if (n2 == 1)
-	n = n1;
-    else
-	n = n1 * n2;
+	if (n1 == 1)
+		n = n2;
+	else if (n2 == 1)
+		n = n1;
+	else
+		n = n1 * n2;
 
-    bcopy(buf, *sst, n);
-    *sst += n;
-    return(n2);
+	bcopy(buf, *sst, n);
+	*sst += n;
+	return (n2);
 }
 
-int sprintf(char *buf,const char *ctl,...)
+int sprintf(char *buf, const char *ctl, ...)
 {
-    char *ptr = buf;
-    int error;
-    va_list va;
+	char *ptr = buf;
+	int error;
+	va_list va;
 
-    va_start(va, ctl);
-    error = _pfmt(ctl, va, _swrite, &ptr);
-    va_end(va);
-    *ptr = 0;
-    return(error);      /*  count/error */
+	va_start(va, ctl);
+	error = _pfmt(ctl, va, _swrite, &ptr);
+	va_end(va);
+	*ptr = 0;
+	return (error); /*  count/error */
 }

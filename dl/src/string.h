@@ -12,12 +12,10 @@
 
 /* Implemented in asm */
 char *realmalloc(register int n __asm("d0"));
-void  realfree(register char *mem __asm("a0"));
+void realfree(register char *mem __asm("a0"));
 void atexit(register void (*function)(void) __asm("a0"));
 void bflush(void);
 /* End of asm prototyping */
-
-
 
 #define uch		unsigned char
 #define IsUpper(c) (c>=0xC0 ? c<=0xDE && c!=0xD7 : c>=0x41 && c<=0x5A)
@@ -30,12 +28,12 @@ void setmem(char *buf, int n, char c);
 char *strtok(char *s, const char *delim);
 int myindex(char *str, char c);
 int strcmp(char *str1, char *str2);
-int strncmp(const char *s1,const char *s2,int n);
+int strncmp(const char *s1, const char *s2, int n);
 int stricmp(char *str1, char *str2);
-char *strcpy(char *dst,const char *src);
+char *strcpy(char *dst, const char *src);
 char *strdup(const char *str);
-char *memcpy(char *dst,char *src,int size);
-char *realloc(char *orig,int newsize);
+char *memcpy(char *dst, char *src, int size);
+char *realloc(char *orig, int newsize);
 
 //#define DEBUGMEMORY
 #ifdef DEBUGMEMORY

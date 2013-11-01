@@ -239,12 +239,14 @@ scheck:	move.l	_SysBase,a6
 			move.l	#12,d1				|#define SIGBREAKB_CTRL_C   12
 			SYS		SetSignal
 			and.l	#1<<12,d0
-			move.l	d0,_gotBreak		| int gotBreak; declaration in dl.c
+			move.l	d0,_gotBreak		| the 'extern int gotBreak;' is updated
 			.endif
 			moveml	(sp)+,d1-d3/a6
 			rts
 
 
+| void putchar(char c)
+| - has hardcoded the flush on '\n'
 			.text
         	.proc
         	.globl  _putchar

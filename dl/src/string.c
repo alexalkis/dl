@@ -50,7 +50,6 @@ void setmem(char *buf, int n, char c)
 		*buf++ = c;
 }
 
-
 int strlen(const char *string)
 {
 	const char *s = string;
@@ -130,13 +129,15 @@ int strcmp(char *str1, char *str2)
 	return *str1 - *str2;
 }
 
-int strncmp(const char *s1,const char *s2,int n)
-{ unsigned char *p1=(unsigned char *)s1,*p2=(unsigned char *)s2;
-  unsigned long r,c;
+int strncmp(const char *s1, const char *s2, int n)
+{
+	unsigned char *p1 = (unsigned char *) s1, *p2 = (unsigned char *) s2;
+	unsigned long r, c;
 
-  if ((r=n))
-    do;while(r=*p1++,c=*p2++,!(r-=c) && (char)c && --n);
-  return r;
+	if ((r = n))
+		do
+			; while (r = *p1++, c = *p2++, !(r -= c) && (char) c && --n);
+	return r;
 }
 
 int stricmp(char *str1, char *str2)

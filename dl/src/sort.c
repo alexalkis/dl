@@ -236,7 +236,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 			} else {
 				//myerror("--> %s + %s\n", dirname, f->fib.fib_FileName);
 				char *name = file_name_concat(dirname, f->fib.fib_FileName,
-						NULL);
+				NULL);
 				//myerror("----------------------> %s\n", name);
 				queue_directory(name, 0, command_line_arg);
 				myfree(name);
@@ -927,7 +927,6 @@ int gobble_file(char const *name, enum filetype type, long inode,
 
 		default: /* DEREF_NEVER */
 
-
 			err = stat(absolute_name, f);
 			if (*absolute_name)
 				strcpy(f->fib.fib_FileName, absolute_name);
@@ -1059,7 +1058,6 @@ static void print_long_format(const struct fileinfo *f)
 
 	s = dates(p, &f->fib.fib_Date);
 	p += 16; //10 for date + 1space + 5 for time
-
 
 	if (s || !*p) {
 		p += s;
