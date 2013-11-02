@@ -24,7 +24,7 @@
 #include "stdio.h"
 #include "string.h"
 
-typedef unsigned long size_t;
+//typedef unsigned long size_t;
 #define F_SPAC	    1
 #define F_PLUS	    2
 #define F_MINUS     4

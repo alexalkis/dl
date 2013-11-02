@@ -13,7 +13,7 @@
 #include <proto/exec.h>
 
 typedef short int bool;
-typedef int size_t;
+//typedef unsigned long size_t;
 
 #define NOT_AN_INODE_NUMBER (-1)
 #define MIN(a,b)	((a>b)?b:a)

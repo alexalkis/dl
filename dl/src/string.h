@@ -9,6 +9,7 @@
 #define STRING_H_
 
 #include <exec/types.h>
+typedef unsigned long size_t;
 
 /* Implemented in asm */
 char *realmalloc(register int n __asm("d0"));
@@ -21,8 +22,8 @@ void bflush(void);
 #define IsUpper(c) (c>=0xC0 ? c<=0xDE && c!=0xD7 : c>=0x41 && c<=0x5A)
 #define ToLower(c) (IsUpper((uch) c) ? (unsigned) c | 0x20 : (unsigned) c)
 
-int strlen(const char *str);
-void bcopy(char *src, char *dest, int n);
+int __regargs strlen(const char *str);
+void bcopy(const void *s1,void *s2,size_t n);
 void bzero(char *dest, int n);
 void setmem(char *buf, int n, char c);
 char *strtok(char *s, const char *delim);

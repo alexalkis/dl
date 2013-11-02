@@ -30,12 +30,53 @@ char *strdup(const char *str)
 	return ret;
 }
 
-void bcopy(char *src, char *dest, int n)
+//#define FULLBCOPY
+#ifndef FULLBCOPY
+void bcopy(const void *s1,void *s2,size_t n)
 {
+/*	static int c=0;
+	static int t=0;
+	++c;
+	t+=n;
+	myerror("--%ld--   %ld %ld\n",n,c,t);*/
 	while (n--)
-		*dest++ = *src++;
+		*((char *)s2)++=*((char *)s1)++;
+}
+#else
+void bcopy(const void *s1,void *s2,size_t n)
+{ size_t m;
+  if(!n)
+    return;
+  if(s2<s1)
+  { if((long)s1&1)
+    { *((char *)s2)++=*((char *)s1)++;
+      n--; }
+    if(!((long)s2&1))
+    { m=n/sizeof(long);
+      n&=sizeof(long)-1;
+      for(;m;m--)
+        *((long *)s2)++=*((long *)s1)++;
+    }
+    for(;n;n--)
+      *((char *)s2)++=*((char *)s1)++;
+  }else
+  { (char *)s1+=n;
+    (char *)s2+=n;
+    if((long)s1&1)
+    { *--((char *)s2)=*--((char *)s1);
+      n--; }
+    if(!((long)s2&1))
+    { m=n/sizeof(long);
+      n&=sizeof(long)-1;
+      for(;m;m--)
+        *--((long *)s2)=*--((long *)s1);
+    }
+    for(;n;n--)
+      *--((char *)s2)=*--((char *)s1);
+  }
 }
 
+#endif
 void bzero(char *dest, int n)
 {
 	while (n--)
@@ -50,7 +91,7 @@ void setmem(char *buf, int n, char c)
 		*buf++ = c;
 }
 
-int strlen(const char *string)
+int __regargs strlen(const char *string)
 {
 	const char *s = string;
 
@@ -111,9 +152,7 @@ char *strtok(char *s, const char *delim)
 int myindex(char *str, char c)
 {
 	int i;
-	int len = strlen(str);
-
-	for (i = 0; i < len; ++i)
+	for (i = 0; str[i]; ++i)
 		if (str[i] == c)
 			return i;
 	return -1;

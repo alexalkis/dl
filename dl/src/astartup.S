@@ -196,7 +196,7 @@ keep:		lea	    MPIB(sp),sp	| deallocate buffer
 
 
 			.globl	_write
-_write:	move.l	8(sp),d1
+_write:		move.l	8(sp),d1
 			move.l	4(sp),a0
 			move.l	_i,d0
 			add.w	d1,d0

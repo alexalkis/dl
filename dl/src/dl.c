@@ -52,14 +52,14 @@ void GetWinBounds(register int *w __asm("a0"), register int *h __asm("a1"));
 
 char *dates(char *s, struct DateStamp *dss);
 char *times(char *s, struct DateStamp *dss);
-const char *wd(int year, int month, int day);
 
-void Dir(struct pending *pend);
 
-int ContainsWildchar(char *text);
+void dir(struct pending *pend);
+
+int containsWildchar(char *text);
 char *getDirectory(char *text);
-void TestBreak(void);
-int ParseSwitches(char *filedir);
+void testBreak(void);
+int parseSwitches(char *filedir);
 
 #define VERSION_STRING "1.0"
 BYTE version[] = "\0$VER: dl " VERSION_STRING " (" __DATE__ ")";
@@ -152,7 +152,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 	print_dir_name = true;
 	format = many_per_line;
 	line_length = windowWidth;
-	int goon = ParseSwitches(cliline);
+	int goon = parseSwitches(cliline);
 	//printf("got out..,\n");bflush();
 
 	format_needs_stat = sort_type == sort_time || sort_type == sort_size
@@ -183,13 +183,13 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					else
 						queue_directory("", NULL, true);
 				} else {
-					if (ContainsWildchar(arg))
+					if (containsWildchar(arg))
 						queue_directory(arg, NULL, true);
 					else
 						gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true,
 								"");
 				}
-				TestBreak();
+				testBreak();
 				++n_files;
 			} while ((arg = strtok(NULL, " ")) && !gotBreak);
 			if (!gotBreak) {
@@ -239,7 +239,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					//myerror("Calling dir with \"%s\" (%s) (%s)\n",thispend->name,thispend->realname,thispend->command_line_arg);
 					clear_files();
 					//myerror("Dir: %s\n",thispend->name);
-					Dir(thispend);
+					dir(thispend);
 					//myerror("Got back from Dir...\n");
 					if (print_dir_name)
 						printf("%s%s%s\n", highlight_tab[HI_USERDIR].on,
@@ -293,7 +293,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 /* Parses the command line, acts on switches
  * Returns -1 for stop, else the position in cmdline that we should parse from
  */
-int ParseSwitches(char *filedir)
+int parseSwitches(char *filedir)
 {
 	char *save = filedir;
 	int notSeenEnd;
@@ -448,17 +448,6 @@ int ParseSwitches(char *filedir)
 unsigned long numBlocks(const LONG size)
 {
 	unsigned long blocks;
-	/*
-	 * A data block holds fp->fs_dbytes bytes.
-	 * Files also have extension blocks,
-	 * and at least one header block.
-	 * Each header block contains some amount of header info,
-	 * and the remainder is filled with longs, each of which can
-	 * address one block.  The number of longs is held as fp->fs_varovhd.
-	 *
-	 * The algorithm used is less efficient than it could be,
-	 * but who cares: the disc access time swamps it.
-	 */
 
 	/* number of data blocks + fixed file overhead */
 	blocks = ((size + bsize - 1) / bsize) + 1;
@@ -467,7 +456,7 @@ unsigned long numBlocks(const LONG size)
 	return blocks;
 }
 
-void Dir(struct pending *pend)
+void dir(struct pending *pend)
 {
 	__aligned struct FileInfoBlock fib;
 	__aligned struct InfoData infodata;
@@ -484,7 +473,7 @@ void Dir(struct pending *pend)
 	}
 	nDirs = nFiles = nTotalSize = ntotal_blocks = 0;
 
-	if (ContainsWildchar(pend->name)) {
+	if (containsWildchar(pend->name)) {
 		dir = getDirectory(pend->name);
 		file = pend->name + strlen(dir);
 		noPattern = 0;
@@ -515,7 +504,7 @@ void Dir(struct pending *pend)
 			pend->realname = strdup(fib.fib_FileName);
 		}
 		while (ExNext(lock, &fib) && !gotBreak) {
-			TestBreak();
+			testBreak();
 			if ((fpattern_match(file, fib.fib_FileName) || noPattern)
 					&& !gotBreak) {
 				ntotal_blocks += numBlocks(fib.fib_Size);
@@ -539,10 +528,9 @@ void Dir(struct pending *pend)
 		extract_dirs_from_files(dir, false);
 }
 
-void TestBreak(void)
+void testBreak(void)
 {
-	ULONG oldsig;
-	oldsig = SetSignal(0L, (LONG)SIGBREAKF_CTRL_C);
+	ULONG oldsig = SetSignal(0L, (LONG)SIGBREAKF_CTRL_C);
 	if ((oldsig & SIGBREAKF_CTRL_C) != 0) {
 		bflush();
 		myerror("\2330m\233 p***BREAK\n");
@@ -643,7 +631,7 @@ char *times(char *s, struct DateStamp *dss)
  }
  */
 
-int ContainsWildchar(char *text)
+int containsWildchar(char *text)
 {
 	/* these are defined in pattern.h */
 	static char patternchars[] = {
@@ -654,10 +642,8 @@ int ContainsWildchar(char *text)
 	FPAT_SET_R,
 	FPAT_SET_NOT,
 	FPAT_SET_THRU };
-
 	int i;
-	int len = strlen(patternchars);
-	for (i = 0; i < len; ++i)
+	for (i = 0; patternchars[i]; ++i)
 		if (myindex(text, patternchars[i]) != -1)
 			return 1;
 	return 0;
@@ -674,8 +660,8 @@ char *getDirectory(char *text)
 	int lastcolon = -1;
 	int lastslash = -1;
 	int i;
-	int len = strlen(text);
-	for (i = 0; i < len; ++i) {
+	//int len = strlen(text);
+	for (i = 0; text[i]; ++i) {
 		buffer[i] = text[i];
 		if (buffer[i] == ':')
 			lastcolon = i;

@@ -100,7 +100,7 @@ extern int gReverse;
 extern int gSort;
 extern int gotBreak;
 
-void TestBreak(void);
+void testBreak(void);
 void shellSort(struct fileinfo **a, int n);
 void quicksort_iterative(struct fileinfo **array, unsigned len);
 void print_many_per_line(void);
@@ -324,7 +324,7 @@ void print_current_files(void)
 		}
 		break;
 	}
-	TestBreak();
+	testBreak();
 }
 
 void addEntry(struct FileInfoBlock *fib)
