@@ -77,6 +77,7 @@ void bcopy(const void *s1,void *s2,size_t n)
 }
 
 #endif
+
 void bzero(char *dest, int n)
 {
 	while (n--)
@@ -197,7 +198,7 @@ int stricmp(char *str1, char *str2)
 }
 
 /* Safe for overlaps */
-char *memcpy(char *dst, char *src, int size)
+void *memcpy(void *dst, void *src, size_t size)
 {
 	register char *d;
 	register const char *s;
@@ -221,17 +222,17 @@ char *memcpy(char *dst, char *src, int size)
 	return (dst);
 }
 
-void fastmemcpy(long *dst, long *src, int len)
-{
-	//WARNING: Not safe on overlaps
-	if (len & 3) {
-		memcpy(dst, src, len);
-		return;
-	}
-	len >>= 2;
-	while (len--)
-		*dst++ = *src++;
-}
+//void fastmemcpy(long *dst, long *src, int len)
+//{
+//	//WARNING: Not safe on overlaps
+//	if (len & 3) {
+//		memcpy(dst, src, len);
+//		return;
+//	}
+//	len >>= 2;
+//	while (len--)
+//		*dst++ = *src++;
+//}
 
 char *realloc(char *orig, int newsize)
 {
@@ -241,7 +242,7 @@ char *realloc(char *orig, int newsize)
 		if (orig) {
 			int *getsize = (int *) orig;
 			--getsize;	//decrease the pointer to go to saved size
-			fastmemcpy(new, orig, (*getsize) - 4);
+			memcpy(new, orig, (*getsize) - 4);
 			myfree(orig);
 		}
 	}

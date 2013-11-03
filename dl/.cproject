@@ -119,7 +119,7 @@
 							<tool command="m68k-amigaos-gcc" id="cdt.managedbuild.tool.gnu.cross.c.compiler.983368587" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler">
 								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.option.optimization.level.2047277784" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" value="gnu.c.optimization.level.size" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.debugging.level.810733955" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" value="gnu.c.debugging.level.default" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.misc.other.456604259" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -fomit-frame-pointer -vno-builtin" valueType="string"/>
+								<option id="gnu.c.compiler.option.misc.other.456604259" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -fomit-frame-pointer -vno-builtin -m68020" valueType="string"/>
 								<option id="gnu.c.compiler.option.misc.verbose.793295029" name="Verbose (-v)" superClass="gnu.c.compiler.option.misc.verbose" value="false" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.warnings.extrawarn.684617231" name="Extra warnings (-Wextra)" superClass="gnu.c.compiler.option.warnings.extrawarn" value="true" valueType="boolean"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.659717959" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
@@ -160,7 +160,7 @@
 							<option id="cdt.managedbuild.option.gnu.cross.path.1280784005.73458894.1055572422" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path.1280784005"/>
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.targetPlatform.gnu.cross.440219624" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.1224894007" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler.983368587">
-								<option id="gnu.c.compiler.option.misc.other.1222091963" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -fomit-frame-pointer -vno-builtin" valueType="string"/>
+								<option id="gnu.c.compiler.option.misc.other.1222091963" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -fomit-frame-pointer -vno-builtin -m68020" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.827141794" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1597024053" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler.210762559"/>

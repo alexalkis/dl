@@ -33,7 +33,7 @@ int strncmp(const char *s1, const char *s2, int n);
 int stricmp(char *str1, char *str2);
 char *strcpy(char *dst, const char *src);
 char *strdup(const char *str);
-char *memcpy(char *dst, char *src, int size);
+void *memcpy(void *dst, void *src, size_t size);
 char *realloc(char *orig, int newsize);
 
 //#define DEBUGMEMORY

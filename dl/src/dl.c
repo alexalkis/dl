@@ -53,7 +53,6 @@ void GetWinBounds(register int *w __asm("a0"), register int *h __asm("a1"));
 char *dates(char *s, struct DateStamp *dss);
 char *times(char *s, struct DateStamp *dss);
 
-
 void dir(struct pending *pend);
 
 int containsWildchar(char *text);
@@ -61,7 +60,7 @@ char *getDirectory(char *text);
 void testBreak(void);
 int parseSwitches(char *filedir);
 
-#define VERSION_STRING "1.0"
+#define VERSION_STRING "1.1"
 BYTE version[] = "\0$VER: dl " VERSION_STRING " (" __DATE__ ")";
 
 extern struct DosLibrary *DOSBase;
@@ -252,10 +251,6 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 						p = human_readable(ntotal_blocks, buf,
 								human_output_opts,
 								ST_NBLOCKSIZE, output_block_size);
-//						if (pending_dirs && !seenMany)
-//							seenMany = 1;
-//						if (seenMany)
-//							printf("%s\n", thispend->name);
 						printf("total %s\n", p);
 
 					}
@@ -569,26 +564,20 @@ char *dates(char *s, struct DateStamp *dss)
 		sprintf(s, "%4d-%02d-%02d", year, month + 1, day + 1);
 	} else {
 		int recent = Now.ds_Days - dss->ds_Days;
-		if (recent < 7) {
+		if (recent < 0 || recent >= 7) {
+			/* A1000 emulation with no clock was giving weird numbers on date display */
+			/* this serves as a fix for that, so we cover the recent<0 */
+			sprintf(s, "    %02d %3s", day + 1, nm[month]);
+			if (recent > 365 || recent < 0) {
+				old = true;
+			}
+		} else {
 			if (recent == 0)
 				sprintf(s, "%10.10s", "Today");
 			else if (recent == 1)
 				sprintf(s, "%10.10s", "Yesterday");
 			else {
 				sprintf(s, "%10.10s", weekdayname[dss->ds_Days % 7]);
-				//sprintf(s, "%10.10s", wd(year, month + 1, day + 1));
-			}
-		} else {
-
-			sprintf(s, "    %02d %3s", day + 1, nm[month]);
-			if (recent > 365) {
-				/*
-				 if (gTimeDateFormat == TIMEDATE_HUMAN)
-				 sprintf(s, "%4d years", recent / 365);
-				 else
-				 sprintf(s, "%3d %s %2d", day + 1, nm[month], year % 100);
-				 */
-				old = true;
 			}
 		}
 	}
@@ -599,6 +588,7 @@ char *dates(char *s, struct DateStamp *dss)
 	} else {
 		sprintf(t, "%s", times(t, dss));
 	}
+
 	return (s);
 }
 
@@ -611,7 +601,7 @@ char *times(char *s, struct DateStamp *dss)
 	minutes %= 60;
 	if (gTimeDateFormat == TIMEDATE_FULL)
 		sprintf(s, "%02d:%02d:%02d.%02d", hours, minutes, seconds,
-				2 * (dss->ds_Tick % TICKS_PER_SECOND));
+					2 * (dss->ds_Tick % TICKS_PER_SECOND));
 	else
 		sprintf(s, "%02d:%02d", hours, minutes);
 	return (s);
@@ -663,9 +653,9 @@ char *getDirectory(char *text)
 	//int len = strlen(text);
 	for (i = 0; text[i]; ++i) {
 		buffer[i] = text[i];
-		if (buffer[i] == ':')
+		if (text[i] == ':')
 			lastcolon = i;
-		if (buffer[i] == '/')
+		if (text[i] == '/')
 			lastslash = i;
 	}
 	if (lastcolon == -1 && lastslash == -1)
