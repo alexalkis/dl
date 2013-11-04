@@ -245,6 +245,33 @@ scheck:	move.l	_SysBase,a6
 			rts
 
 
+			.global _bcopy
+_bcopy:	moveal	4(sp),a1
+			moveal	8(sp),a0
+			movel	12(sp),d0
+
+			movel	d0,d1
+			and		#3,d1				| is size divisible by 4?
+			jbne	.notl				| nope, do byte copy
+
+			lsr.l	#2,d0
+			subq.l	#1,d0
+.ll:		move.l	(a1)+,(a0)+
+			dbra	d0,.ll
+			clrw	d0
+			subql	#1,d0
+			jbcc	.ll
+			rts
+
+.notl:		subq.l	#1,d0
+.bl:		move.b	(a1)+,(a0)+
+			dbra	d0,.bl
+			clrw	d0
+			subql	#1,d0
+			jbcc	.bl
+			rts
+
+
 | void putchar(char c)
 | - has hardcoded the flush on '\n'
 			.text

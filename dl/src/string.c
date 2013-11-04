@@ -30,50 +30,52 @@ char *strdup(const char *str)
 	return ret;
 }
 
+// bcopy is in assembly now (astartup.S)
 //#define FULLBCOPY
 #ifndef FULLBCOPY
-void bcopy(const void *s1,void *s2,size_t n)
-{
-/*	static int c=0;
-	static int t=0;
-	++c;
-	t+=n;
-	myerror("--%ld--   %ld %ld\n",n,c,t);*/
-	while (n--)
-		*((char *)s2)++=*((char *)s1)++;
-}
+//void bcopy(const void *s1, void *s2, size_t n)
+//{
+//	 /*static int c=0;
+//	 static int t=0;
+//	 ++c;
+//	 t+=n;
+//	 myerror("--%ld--   %ld %ld\n",n,c,t);*/
+//		while (n--)
+//			*((char *) s2)++ = *((char *) s1)++;
+//
+//}
 #else
 void bcopy(const void *s1,void *s2,size_t n)
-{ size_t m;
-  if(!n)
-    return;
-  if(s2<s1)
-  { if((long)s1&1)
-    { *((char *)s2)++=*((char *)s1)++;
-      n--; }
-    if(!((long)s2&1))
-    { m=n/sizeof(long);
-      n&=sizeof(long)-1;
-      for(;m;m--)
-        *((long *)s2)++=*((long *)s1)++;
-    }
-    for(;n;n--)
-      *((char *)s2)++=*((char *)s1)++;
-  }else
-  { (char *)s1+=n;
-    (char *)s2+=n;
-    if((long)s1&1)
-    { *--((char *)s2)=*--((char *)s1);
-      n--; }
-    if(!((long)s2&1))
-    { m=n/sizeof(long);
-      n&=sizeof(long)-1;
-      for(;m;m--)
-        *--((long *)s2)=*--((long *)s1);
-    }
-    for(;n;n--)
-      *--((char *)s2)=*--((char *)s1);
-  }
+{	size_t m;
+	if(!n)
+	return;
+	if(s2<s1)
+	{	if((long)s1&1)
+		{	*((char *)s2)++=*((char *)s1)++;
+			n--;}
+		if(!((long)s2&1))
+		{	m=n/sizeof(long);
+			n&=sizeof(long)-1;
+			for(;m;m--)
+			*((long *)s2)++=*((long *)s1)++;
+		}
+		for(;n;n--)
+		*((char *)s2)++=*((char *)s1)++;
+	} else
+	{	(char *)s1+=n;
+		(char *)s2+=n;
+		if((long)s1&1)
+		{	*--((char *)s2)=*--((char *)s1);
+			n--;}
+		if(!((long)s2&1))
+		{	m=n/sizeof(long);
+			n&=sizeof(long)-1;
+			for(;m;m--)
+			*--((long *)s2)=*--((long *)s1);
+		}
+		for(;n;n--)
+		*--((char *)s2)=*--((char *)s1);
+	}
 }
 
 #endif
@@ -164,8 +166,8 @@ int strcmp(char *str1, char *str2)
 		++str1;
 		++str2;
 	}
-	if (*str2 == *str1)
-		return 0;
+//	if (*str2 == *str1)
+//		return 0;
 	return *str1 - *str2;
 }
 

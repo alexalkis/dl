@@ -547,7 +547,7 @@ char *dates(char *s, struct DateStamp *dss)
 	year = 1978;
 	day = dss->ds_Days;
 
-	while (day >= 366) {
+	while (day >= 365) {
 		if ((year & 3) == 0 && ((year % 25) != 0 || (year & 15) == 0))
 			day -= 366;
 		else
@@ -558,6 +558,7 @@ char *dates(char *s, struct DateStamp *dss)
 		dpm[1] = 29;
 	else
 		dpm[1] = 28;
+	//myerror("day=%ld\n",day);
 	for (month = 0; day >= dpm[month]; ++month)
 		day -= dpm[month];
 	if (gTimeDateFormat == TIMEDATE_FULL) {
@@ -567,6 +568,7 @@ char *dates(char *s, struct DateStamp *dss)
 		if (recent < 0 || recent >= 7) {
 			/* A1000 emulation with no clock was giving weird numbers on date display */
 			/* this serves as a fix for that, so we cover the recent<0 */
+			//myerror("month=%ld\n",month);
 			sprintf(s, "    %02d %3s", day + 1, nm[month]);
 			if (recent > 365 || recent < 0) {
 				old = true;

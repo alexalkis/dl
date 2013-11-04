@@ -404,7 +404,10 @@ int _pfmtone(char c, va_list *pva,
  */
 static int vfwrite(const void *vbuf, size_t elmsize, size_t elms, BPTR fi)
 {
-	write(vbuf, elmsize * elms);
+	if (elmsize==1)
+		write(vbuf, elms);
+	else
+		write(vbuf, elmsize * elms);
 }
 
 int printf(const char *ctl, ...)
