@@ -286,7 +286,7 @@ int _pfmtone(char c, va_list *pva,
 	 *	prefix goes before zero padding, but after space padding
 	 */
 
-	if (flags & F_ZERO) {
+	if (flags & F_ZERO && *prefix1) {
 		strcpy(buf, prefix1);
 		i = strlen(prefix1);
 	} else {
@@ -294,7 +294,8 @@ int _pfmtone(char c, va_list *pva,
 	}
 
 	if (i1 > 0 && !(flags & F_MINUS)) {
-		short j = i1 - strlen(prefix1) - len - strlen(postfix1) - trail_zero;
+		short j = i1 - (*prefix1?strlen(prefix1):0) - len
+				- (*postfix1?strlen(postfix1):0) - trail_zero;
 		short cc = (flags & F_ZERO) ? '0' : ' ';
 
 		while (j > 20) {
@@ -312,7 +313,7 @@ int _pfmtone(char c, va_list *pva,
 		}
 	}
 
-	if ((flags & F_ZERO) == 0) {
+	if ((flags & F_ZERO) == 0 && *prefix1) {
 		strcpy(buf + i, prefix1);
 		i += strlen(prefix1);
 	}

@@ -22,7 +22,7 @@ void bflush(void);
 #define IsUpper(c) (c>=0xC0 ? c<=0xDE && c!=0xD7 : c>=0x41 && c<=0x5A)
 #define ToLower(c) (IsUpper((uch) c) ? (unsigned) c | 0x20 : (unsigned) c)
 
-int __regargs strlen(const char *str);
+
 void bcopy(const void *s1,void *s2,size_t n);
 void bzero(char *dest, int n);
 void setmem(char *buf, int n, char c);
@@ -35,6 +35,14 @@ char *strcpy(char *dst, const char *src);
 char *strdup(const char *str);
 void *memcpy(void *dst, void *src, size_t size);
 char *realloc(char *orig, int newsize);
+
+//#define TRACKSTRLENCALLS
+#ifdef TRACKSTRLENCALLS
+int realstrlen(const char *str,char *f, char *s,int line);
+#define strlen(x) realstrlen((x),__FUNCTION__,__FILE__,__LINE__)
+#else
+int __regargs strlen(const char *str);
+#endif
 
 //#define DEBUGMEMORY
 #ifdef DEBUGMEMORY

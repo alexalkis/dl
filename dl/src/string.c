@@ -94,14 +94,29 @@ void setmem(char *buf, int n, char c)
 		*buf++ = c;
 }
 
+
+#ifdef TRACKSTRLENCALLS
+int realstrlen(const char *string,char *f, char *s,int line)
+{
+	const char *save = string;
+	static int c=0;
+	myerror("\"%s\" -- %ld -- %s,%s,%ld\n",string,++c,f,s,line);
+	do
+		; while (*save++);
+	return ~(string - save);
+}
+
+#else
 int __regargs strlen(const char *string)
 {
 	const char *s = string;
-
+	//static int c=0;myerror("\"%s\" -- %ld\n",string,++c);
 	do
 		; while (*s++);
 	return ~(string - s);
 }
+
+#endif
 
 char *strtok(char *s, const char *delim)
 {

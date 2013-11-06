@@ -486,7 +486,7 @@ human_options (char const *spec, int *opts, uintmax_t *block_size)
 
 #include "human.h"
 #include "stdio.h"
-#include "strings.h"
+#include "string.h"
 
 static char *
 group_number(char *number, size_t numberlen, char const *grouping,

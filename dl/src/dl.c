@@ -22,11 +22,14 @@
  dir  490328   (49 bytes per entry) 27.465249s
  ls  2768336  (277 bytes per entry) 47.194482s
  dl  3463296  (346 bytes per entry)	38.662612
+ dl v1.1							20.73
+ dl v1.1/020						19.43
  list    							73.26
 
 
  test2 1000 files
  dl 297896 (298 bpe)  	3.66s
+ dl v1.1				1,87s
  dir 74232 ( 74 bpe)  	2.65s
  ls 323096 (323 bpe)  	1.88s
  list					7.38s
