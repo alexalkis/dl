@@ -250,6 +250,18 @@ _bcopy:	moveal	4(sp),a1
 			moveal	8(sp),a0
 			movel	12(sp),d0
 
+			moveq   #12,d1
+			cmp.l   d1,d0
+			jbcs	.notl
+
+			move.l	a1,d1
+			and		#3,d1
+			jbne	.notl				| nope, do byte copy
+
+			move.l	a0,d1
+			and		#3,d1
+			jbne	.notl				| nope, do byte copy
+
 			movel	d0,d1
 			and		#3,d1				| is size divisible by 4?
 			jbne	.notl				| nope, do byte copy
