@@ -648,28 +648,22 @@ int containsWildchar(char *text)
  * returns the non-filename prefix
  * ie: 	df0:foo -> returns df0:
  * 		foo/boo -> returns foo/
+ * 		df0:foo/boo -> returns df0:foo/
  */
 char *getDirectory(char *text)
 {
 	static char buffer[80];
-	int lastcolon = -1;
-	int lastslash = -1;
+	int lastplace = -1;
+
 	int i;
-	//int len = strlen(text);
 	for (i = 0; text[i]; ++i) {
 		buffer[i] = text[i];
-		if (text[i] == ':')
-			lastcolon = i;
-		if (text[i] == '/')
-			lastslash = i;
+		if (text[i] == ':' || text[i] == '/')
+			lastplace = i;
 	}
-	if (lastcolon == -1 && lastslash == -1)
+	if (lastplace == -1)
 		return "";
-	if (lastslash != -1) {
-		buffer[lastslash + 1] = '\0';
-	} else {
-		buffer[lastcolon + 1] = '\0';
-	}
+	buffer[lastplace + 1] = '\0';
 	return buffer;
 }
 

@@ -286,7 +286,7 @@ int _pfmtone(char c, va_list *pva,
 	 *	prefix goes before zero padding, but after space padding
 	 */
 
-	if (flags & F_ZERO && *prefix1) {
+	if ((flags & F_ZERO) && *prefix1) {
 		strcpy(buf, prefix1);
 		i = strlen(prefix1);
 	} else {
@@ -294,8 +294,8 @@ int _pfmtone(char c, va_list *pva,
 	}
 
 	if (i1 > 0 && !(flags & F_MINUS)) {
-		short j = i1 - (*prefix1?strlen(prefix1):0) - len
-				- (*postfix1?strlen(postfix1):0) - trail_zero;
+		short j = i1 - (*prefix1 ? strlen(prefix1) : 0) - len
+				- (*postfix1 ? strlen(postfix1) : 0) - trail_zero;
 		short cc = (flags & F_ZERO) ? '0' : ' ';
 
 		while (j > 20) {
@@ -405,10 +405,11 @@ int _pfmtone(char c, va_list *pva,
  */
 static int vfwrite(const void *vbuf, size_t elmsize, size_t elms, BPTR fi)
 {
-	if (elmsize==1)
+	if (elmsize == 1) {
 		write(vbuf, elms);
-	else
-		write(vbuf, elmsize * elms);
+	} else {
+		write(vbuf, (short) ((short) elmsize * (short) elms));
+	}
 }
 
 int printf(const char *ctl, ...)
@@ -429,9 +430,12 @@ int fwrite(const void *vbuf, size_t elmsize, size_t elms, BPTR fi)
 
 void puts(const char *str)
 {
-	int len = strlen(str);
-	if (len)
+	int len;
+
+	if (*str) {
+		len = strlen(str);
 		write(str, len);
+	}
 	write("\n", 1);
 }
 
@@ -450,13 +454,13 @@ static unsigned int _swrite(char *buf, size_t n1, size_t n2, const char **sst)
 {
 	size_t n;
 
-	if (n1 == 1)
+	if (n1 == 1) {
 		n = n2;
-	else if (n2 == 1)
+	} else if (n2 == 1) {
 		n = n1;
-	else
+	} else {
 		n = n1 * n2;
-
+	}
 	bcopy(buf, *sst, n);
 	*sst += n;
 	return (n2);

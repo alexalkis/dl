@@ -25,7 +25,8 @@ char *strdup(const char *str)
 	int len = strlen(str) + 1;
 	char *ret = mymalloc(len);
 	if (ret) {
-		strcpy(ret, str);
+		//strcpy(ret, str);
+		bcopy(str,ret,len);
 	}
 	return ret;
 }

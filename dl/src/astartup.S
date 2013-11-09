@@ -196,7 +196,7 @@ keep:		lea	    MPIB(sp),sp	| deallocate buffer
 
 
 			.globl	_write
-_write:		move.l	8(sp),d1
+_write:	move.l	8(sp),d1
 			move.l	4(sp),a0
 			move.l	_i,d0
 			add.w	d1,d0
@@ -252,6 +252,7 @@ scheck:	move.l	_SysBase,a6
 _bcopy:	moveal	4(sp),a1
 			moveal	8(sp),a0
 			movel	12(sp),d0
+			jbeq	.bdone
 
 			moveq   #12,d1
 			cmp.l   d1,d0

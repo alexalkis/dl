@@ -408,7 +408,7 @@ char *extindex(char *str)
 	for (i = len - 1; i; --i)
 		if (str[i] == '.')
 			return &str[i + 1];
-	return &str[i + len];		//not found, point at \0 byte at the end
+	return str+len;		//not found, point at \0 byte at the end
 }
 
 int cmp(struct FileInfoBlock *fib1, struct FileInfoBlock *fib2)
