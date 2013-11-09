@@ -501,7 +501,8 @@ group_number(char *number, size_t numberlen, char const *grouping,
 	 in the square of the largest uintmax_t, so double the size needed.  */
 	char buf[20]; //[2 * INT_STRLEN_BOUND (uintmax_t) + 1];
 
-	memcpy(buf, number, numberlen);
+	//memcpy(buf, number, numberlen);
+	bcopy(number,buf,  numberlen);
 	d = number + numberlen;
 
 	for (;;) {
@@ -517,12 +518,14 @@ group_number(char *number, size_t numberlen, char const *grouping,
 
 		d -= grouplen;
 		i -= grouplen;
-		memcpy(d, buf + i, grouplen);
+		//memcpy(d, buf + i, grouplen);
+		bcopy( buf + i,d, grouplen);
 		if (i == 0)
 			return d;
 
 		d -= thousands_seplen;
-		memcpy(d, thousands_sep, thousands_seplen);
+		//memcpy(d, thousands_sep, thousands_seplen);
+		bcopy(thousands_sep,d,  thousands_seplen);
 	}
 }
 
@@ -690,7 +693,8 @@ human_readable(int n, char *buf, int opts, int from_block_size,
 							&& (tenths || !(opts & human_suppress_point_zero))) {
 						*--p = '0' + tenths;
 						p -= decimal_pointlen;
-						memcpy(p, decimal_point, decimal_pointlen);
+						//memcpy(p, decimal_point, decimal_pointlen);
+						bcopy(decimal_point, p,decimal_pointlen);
 						tenths = rounding = 0;
 					}
 				}
@@ -708,7 +712,8 @@ human_readable(int n, char *buf, int opts, int from_block_size,
 				if (!(opts & human_suppress_point_zero)) {
 					*--p = '0';
 					p -= decimal_pointlen;
-					memcpy(p, decimal_point, decimal_pointlen);
+					//memcpy(p, decimal_point, decimal_pointlen);
+					bcopy(decimal_point,p, decimal_pointlen);
 				}
 				amt = 1;
 			}

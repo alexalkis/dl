@@ -33,7 +33,8 @@ int strncmp(const char *s1, const char *s2, int n);
 int stricmp(char *str1, char *str2);
 char *strcpy(char *dst, const char *src);
 char *strdup(const char *str);
-void *memcpy(void *dst, void *src, size_t size);
+void bcopy(const void *src, void *dest, size_t n);
+//void *memcpy(void *dst, void *src, size_t size);
 char *realloc(char *orig, int newsize);
 
 //#define TRACKSTRLENCALLS

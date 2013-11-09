@@ -89,7 +89,6 @@ void bzero(char *dest, int n)
 void setmem(char *buf, int n, char c)
 {
 	int i;
-
 	for (i = 0; i < n; ++i)
 		*buf++ = c;
 }
@@ -214,30 +213,34 @@ int stricmp(char *str1, char *str2)
 	return (LONG) c1 - (LONG) c2;
 }
 
-/* Safe for overlaps */
-void *memcpy(void *dst, void *src, size_t size)
-{
-	register char *d;
-	register const char *s;
-	register int n;
-
-	if (size <= 0)
-		return (dst);
-
-	s = src;
-	d = dst;
-	if (s <= d && s + (size - 1) >= d) {
-		/* Overlap, must copy right-to-left. */
-		s += size - 1;
-		d += size - 1;
-		for (n = size; n > 0; n--)
-			*d-- = *s--;
-	} else
-		for (n = size; n > 0; n--)
-			*d++ = *s++;
-
-	return (dst);
-}
+// Don't have any overlaps and bcopy is good enough
+// switched all occurrences of nencpy to bcopy.
+//       Note the pointers order is reversed
+//
+///* Safe for overlaps */
+//void *memcpy(void *dst, void *src, size_t size)
+//{
+//	register char *d;
+//	register const char *s;
+//	register int n;
+//
+//	if (size <= 0)
+//		return (dst);
+//
+//	s = src;
+//	d = dst;
+//	if (s <= d && s + (size - 1) >= d) {
+//		/* Overlap, must copy right-to-left. */
+//		s += size - 1;
+//		d += size - 1;
+//		for (n = size; n > 0; n--)
+//			*d-- = *s--;
+//	} else
+//		for (n = size; n > 0; n--)
+//			*d++ = *s++;
+//
+//	return (dst);
+//}
 
 //void fastmemcpy(long *dst, long *src, int len)
 //{
@@ -259,7 +262,8 @@ char *realloc(char *orig, int newsize)
 		if (orig) {
 			int *getsize = (int *) orig;
 			--getsize;	//decrease the pointer to go to saved size
-			memcpy(new, orig, (*getsize) - 4);
+			//memcpy(new, orig, (*getsize) - 4);
+			bcopy(orig,new,(*getsize) - 4);
 			myfree(orig);
 		}
 	}

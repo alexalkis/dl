@@ -246,6 +246,9 @@ scheck:	move.l	_SysBase,a6
 
 
 			.global _bcopy
+			| a1 src
+			| a0 dest
+			| d0 size
 _bcopy:	moveal	4(sp),a1
 			moveal	8(sp),a0
 			movel	12(sp),d0
@@ -255,25 +258,42 @@ _bcopy:	moveal	4(sp),a1
 			jbcs	.notl
 
 			move.l	a1,d1
-			and		#3,d1
+			and		#1,d1
 			jbne	.notl				| nope, do byte copy
 
 			move.l	a0,d1
-			and		#3,d1
+			and		#1,d1
 			jbne	.notl				| nope, do byte copy
 
 			movel	d0,d1
-			and		#3,d1				| is size divisible by 4?
-			jbne	.notl				| nope, do byte copy
+			and		#3,d1				| save the bytes that will remain
+			move.w	d1,-(sp)
 
-			lsr.l	#2,d0
+			moveq	#96,d1
+			cmp.l	d1,d0
+			jbcs	.nobatch
+			movem.l	d1-d7/a2-a6,-(sp)
+.batchl:	movem.l	(a1)+,d1-d7/a2-a6
+			movem.l	d1-d7/a2-a6,(a0)
+			moveq	#48,d1
+			add.l	d1,a0
+			sub.l	d1,d0
+			cmp.l	d1,d0
+			jbcc	.batchl
+			movem.l	(sp)+,d1-d7/a2-a6
+
+.nobatch:	lsr.l	#2,d0
+			jbeq	.bdone
 			subq.l	#1,d0
 .ll:		move.l	(a1)+,(a0)+
 			dbra	d0,.ll
 			clrw	d0
 			subql	#1,d0
 			jbcc	.ll
-			rts
+
+			move.w	(sp)+,d0
+			jbeq	.bdone
+			ext.l	d0
 
 .notl:		subq.l	#1,d0
 .bl:		move.b	(a1)+,(a0)+
@@ -281,7 +301,7 @@ _bcopy:	moveal	4(sp),a1
 			clrw	d0
 			subql	#1,d0
 			jbcc	.bl
-			rts
+.bdone:		rts
 
 
 | void putchar(char c)
