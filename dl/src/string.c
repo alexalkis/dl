@@ -181,8 +181,6 @@ int strcmp(char *str1, char *str2)
 		++str1;
 		++str2;
 	}
-//	if (*str2 == *str1)
-//		return 0;
 	return *str1 - *str2;
 }
 
@@ -211,7 +209,7 @@ int stricmp(char *str1, char *str2)
 	} while (c1 == c2 && c1);
 
 	/* Get result. */
-	return (LONG) c1 - (LONG) c2;
+	return (int) c1 - (int) c2;
 }
 
 // Don't have any overlaps and bcopy is good enough

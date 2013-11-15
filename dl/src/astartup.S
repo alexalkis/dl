@@ -156,7 +156,7 @@ _dosname:	.asciz "dos.library"
 			.even
 
 
-_i:        	.long 0
+buffIndex:	.long 0
 fpindex: 	.long 0
 	        .text
 	        .even
@@ -172,7 +172,7 @@ _bprintf:
             lea.l   stuffChar(pc),a2
             move.l  _SysBase,a6
             jsr     _LVORawDoFmt(a6)
-			move.l	_i,d0
+			move.l	buffIndex,d0
 	    	lea.l	_buffer,a2
 str:    	moveb	(a3)+,d1
 	    	moveb	d1,(a2,d0.l)
@@ -180,7 +180,7 @@ str:    	moveb	(a3)+,d1
 	    	tst.b	d1
 	    	bne.s	str
 			subq.l	#1,d0		| compensate for \0
-			move.l	d0,_i
+			move.l	d0,buffIndex
 			cmpl	#BUFFERSIZE,d0	| can kill the system with a big write >256bytes
 			jle		keep		| string, but I trust you.
 			.ifgt	FLUSHONCR
@@ -198,18 +198,18 @@ keep:		lea	    MPIB(sp),sp	| deallocate buffer
 			.globl	_write
 _write:	move.l	8(sp),d1
 			move.l	4(sp),a0
-			move.l	_i,d0
+			move.l	buffIndex,d0
 			add.w	d1,d0
 			cmp.w	#BUFFERSIZE,d0
 			jle		.nofl
 			jbsr	_bflush
-.nofl:		move.l	_i,d0
+.nofl:		move.l	buffIndex,d0
 			lea.l	_buffer,a1
 			subq	#1,d1
 .lc:		moveb	(a0)+,(a1,d0.l)
 			addq	#1,d0
 			dbra	d1,.lc
-			move.l	d0,_i
+			move.l	d0,buffIndex
 			.ifgt FLUSHONCR
 			subq	#1,d0
 			cmp.b	#'\n',(a1,d0.l)
@@ -224,14 +224,14 @@ _write:	move.l	8(sp),d1
 			.globl  _bflush
 			| normally we wouldn't save D1, but 'write' needs that
 _bflush:	moveml	d1-d3/a6,-(sp)
-			move.l	_i,d3			| if len is zero nothing to flush
+			move.l	buffIndex,d3			| if len is zero nothing to flush
 			jeq		.len0			| just check for ctrl-c
 			lea		_buffer,a0
 			move.l	a0,d2
 			move.l	_DOSBase,a6
 			move.l	_stdout,d1
 			SYS		Write
-			clrl 	_i
+			clrl 	buffIndex
 .len0:
 			.ifgt	CHECKCTRLC
 scheck:	move.l	_SysBase,a6
@@ -311,12 +311,12 @@ _bcopy:	moveal	4(sp),a1
         	.proc
         	.globl  _putchar
 _putchar:
-			move.l	_i,d0
+			move.l	buffIndex,d0
 			lea		_buffer,a0
 			moveb	7(sp),d1
 			moveb	d1,(a0,d0:l)
 			addql	#1,d0
-			move.l	d0,_i
+			move.l	d0,buffIndex
 			cmpl	#BUFFERSIZE,d0
 			jeq		.flushit
 			cmp.b	#'\n',d1

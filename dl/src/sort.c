@@ -100,6 +100,7 @@ extern int gReverse;
 extern int gSort;
 extern int gotBreak;
 
+char *dates(char *s, struct DateStamp *dss);
 void testBreak(void);
 void shellSort(struct fileinfo **a, int n);
 void quicksort_iterative(struct fileinfo **array, unsigned len);

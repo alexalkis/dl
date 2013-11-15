@@ -494,7 +494,7 @@ group_number(char *number, size_t numberlen, char const *grouping,
 {
 	register char *d;
 	size_t grouplen = SIZE_MAX;
-	size_t thousands_seplen = strlen(thousands_sep);
+	size_t thousands_seplen = 0;//strlen(thousands_sep);
 	size_t i = numberlen;
 
 	/* The maximum possible value for NUMBERLEN is the number of digits
