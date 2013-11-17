@@ -523,10 +523,12 @@ static void indent(size_t from, size_t to)
 {
 	while (from < to) {
 		if (tabsize != 0 && to / tabsize > (from + 1) / tabsize) {
-			printf("\t");
+			//printf("\t");
+			putchar('\t');
 			from += tabsize - from % tabsize;
 		} else {
-			printf(" ");
+			//printf(" ");
+			putchar(' ');
 			from++;
 		}
 	}

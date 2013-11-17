@@ -89,8 +89,9 @@ void bzero(char *dest, int n)
 
 void setmem(char *buf, int n, char c)
 {
-	int i;
-	for (i = 0; i < n; ++i)
+	//int i;
+	//for (i = 0; i < n; ++i)
+	while(n--)
 		*buf++ = c;
 }
 

@@ -203,6 +203,8 @@ _write:	move.l	8(sp),d1
 			cmp.w	#BUFFERSIZE,d0
 			jle		.nofl
 			jbsr	_bflush
+			move.l	8(sp),d1
+			move.l	4(sp),a0
 .nofl:		move.l	buffIndex,d0
 			lea.l	_buffer,a1
 			subq	#1,d1
@@ -222,8 +224,7 @@ _write:	move.l	8(sp),d1
 |    D0                       D1    D2      D3
 |additonaly, check for ctrl-c and set global 'gotBreak' to non-zero upon ctrl-c
 			.globl  _bflush
-			| normally we wouldn't save D1, but 'write' needs that
-_bflush:	moveml	d1-d3/a6,-(sp)
+_bflush:	moveml	d2-d3/a6,-(sp)
 			move.l	buffIndex,d3			| if len is zero nothing to flush
 			jeq		.len0			| just check for ctrl-c
 			lea		_buffer,a0
@@ -241,7 +242,7 @@ scheck:	move.l	_SysBase,a6
 			and.l	#1<<12,d0
 			move.l	d0,_gotBreak		| the 'extern int gotBreak;' is updated
 			.endif
-			moveml	(sp)+,d1-d3/a6
+			moveml	(sp)+,d2-d3/a6
 			rts
 
 

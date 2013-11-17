@@ -167,10 +167,6 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 				(immediate_dirs || indicator_style == classify
 						|| format == long_format) ?
 						DEREF_NEVER : DEREF_COMMAND_LINE_SYMLINK_TO_DIR);
-
-	//Done: Recursion  (Seems to work, not fully tested...)
-	//TODO: Handle the non-existant shell substitution of amiga's CLI
-	//this will be new
 	int n_files = 0;
 	if (goon != -1) {
 		cliline = &cliline[goon];
@@ -491,8 +487,7 @@ void dir(struct pending *pend)
 			bsize = infodata.id_BytesPerBlock;
 		} else {
 			bsize = 512;
-			myerror("%s: error on Info(), assuming 512bytes blocks. [%ld]\n",
-					arg0, IoErr());
+			//myerror("%s: error on Info(), assuming 512bytes blocks. [%ld]\n",arg0, IoErr());
 		}
 	}
 
