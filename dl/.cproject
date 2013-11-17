@@ -61,6 +61,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1673783418" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool command="m68k-amigaos-as" id="cdt.managedbuild.tool.gnu.cross.assembler.1608552104" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
+								<option id="gnu.both.asm.option.flags.1680284996" superClass="gnu.both.asm.option.flags" value="--defsym needmath=1" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.532919436" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>

@@ -1,5 +1,5 @@
 NEEDATEXIT	= 0		| make it 1 to enable the atexit function/logic
-FLUSHONCR 	= 1		| 1--Flush stdout if last char is '\n', 0--Disable NEEDS REDESIGN
+FLUSHONCR 	= 1		| 1--Flush stdout if last char is '\n', 0--Disable
 CHECKCTRLC 	= 1		| 1--Enable ctrl-c check on bflush, 0--Disable
 
 			.macro SYS function
@@ -154,44 +154,11 @@ _gotBreak:	.long 0
 OldWindowPtr: .long 0
 _dosname:	.asciz "dos.library"
 			.even
-
-
 buffIndex:	.long 0
 fpindex: 	.long 0
 	        .text
 	        .even
-	        /*
-	        .globl  _bprintf
 
-_bprintf:
-            moveml 	a2-a3/a6,-(sp)
-            moveal  4*4(sp),a0
-            lea   	5*4(sp),a1
-	    	lea     -MPIB(sp),sp		| allocate stack space for produced string
-	    	moveal  sp,a3
-            lea.l   stuffChar(pc),a2
-            move.l  _SysBase,a6
-            jsr     _LVORawDoFmt(a6)
-			move.l	buffIndex,d0
-	    	lea.l	_buffer,a2
-str:    	moveb	(a3)+,d1
-	    	moveb	d1,(a2,d0.l)
-	    	addq.l	#1,d0
-	    	tst.b	d1
-	    	bne.s	str
-			subq.l	#1,d0		| compensate for \0
-			move.l	d0,buffIndex
-			cmpl	#BUFFERSIZE,d0	| can kill the system with a big write >256bytes
-			jle		keep		| string, but I trust you.
-			.ifgt	FLUSHONCR
-			cmp.b	#'\n',d1	| if last char was \n flush the buffer
-			bne		keep
-			.endif
-			bsr		_bflush
-keep:		lea	    MPIB(sp),sp	| deallocate buffer
-            movem.l (sp)+,a2-a3/a6
-            rts
-            */
 .lcomm 		_buffer,BUFFERSIZE+MPIB
 
 
@@ -203,8 +170,8 @@ _write:	move.l	8(sp),d1
 			cmp.w	#BUFFERSIZE,d0
 			jle		.nofl
 			jbsr	_bflush
-			move.l	8(sp),d1
-			move.l	4(sp),a0
+			move.l	8(sp),d1			| flush trashes a0/d1, so restore them
+			move.l	4(sp),a0			|   from stack
 .nofl:		move.l	buffIndex,d0
 			lea.l	_buffer,a1
 			subq	#1,d1
@@ -306,6 +273,7 @@ _bcopy:	moveal	4(sp),a1
 .bdone:		rts
 
 
+
 | void putchar(char c)
 | - has hardcoded the flush on '\n'
 			.text
@@ -329,6 +297,7 @@ _putchar:
 /* Note that this is unbuffered.
 ** If you need it buffered, use another buffer.  You shouldn't mix with the
 ** stdout's buffer.
+** Also note the horrible crashing you'd achieve with a string > MPIB bytes (512)
 */
 		.text
         .proc
@@ -337,7 +306,7 @@ _myerror:
 		    moveml 	d2-d3/a2-a3/a6,-(sp)
             moveal  6*4(sp),a0
             lea   	7*4(sp),a1
-	    	lea     -256(sp),sp		| allocate stack space for produced string
+	    	lea     -MPIB(sp),sp		| allocate stack space for produced string
 	    	moveal  sp,a3
             lea.l   stuffChar(pc),a2
             move.l  _SysBase,a6
@@ -351,7 +320,7 @@ _myerror:
             jbra	.e1
 .e2:     	move.l	_DOSBase,a6
 			SYS		Write
-			lea	    256(sp),sp		| deallocate buffer
+			lea	    MPIB(sp),sp		| deallocate buffer
 			moveml 	(sp)+,d2-d3/a2-a3/a6
 			rts
 
@@ -395,44 +364,8 @@ _realfree:
         jbsr    \addr
         .endm
 
-        .text
-        .proc
-        .globl  ___divsi3
-___divsi3:
-        movel   d2, sp@-
 
-        moveq   #1, d2     		/* sign of result stored in d2 (=1 or =-1) */
-        movel   sp@(12), d1     /* d1 = divisor */
-        jpl     L1
-        negl    d1
-#ifndef __mcoldfire__
-        negb    d2              /* change sign because divisor <0  */
-#else
-        negl    d2              /* change sign because divisor <0  */
-#endif
-L1:     movel   sp@(8), d0      /* d0 = dividend */
-        jpl     L2
-        negl    d0
-#ifndef __mcoldfire__
-        negb    d2
-#else
-        negl    d2
-#endif
-
-L2:     movel   d1, sp@-
-        movel   d0, sp@-
-        PICCALL ___udivsi3 		/* divide abs(dividend) by abs(divisor) */
-        addql   #8, sp
-
-        tstb    d2
-        jpl     L3
-        negl    d0
-
-L3:     movel   sp@+, d2
-        rts
-#endif /* L_divsi3 */
-
-
+.ifdef needmath
         .text
         .proc
         .globl  ___udivsi3
@@ -480,6 +413,47 @@ L5:     subql   #1, d0     		/* adjust quotient */
 
 L6:     movel   sp@+, d2
         rts
+
+		.text
+        .proc
+        .globl  ___divsi3
+___divsi3:
+        movel   d2, sp@-
+
+        moveq   #1, d2     		/* sign of result stored in d2 (=1 or =-1) */
+        movel   sp@(12), d1     /* d1 = divisor */
+        jpl     L1
+        negl    d1
+#ifndef __mcoldfire__
+        negb    d2              /* change sign because divisor <0  */
+#else
+        negl    d2              /* change sign because divisor <0  */
+#endif
+L1:     movel   sp@(8), d0      /* d0 = dividend */
+        jpl     L2
+        negl    d0
+#ifndef __mcoldfire__
+        negb    d2
+#else
+        negl    d2
+#endif
+
+L2:     movel   d1, sp@-
+        movel   d0, sp@-
+        PICCALL ___udivsi3 		/* divide abs(dividend) by abs(divisor) */
+        addql   #8, sp
+
+        tstb    d2
+        jpl     L3
+        negl    d0
+
+L3:     movel   sp@+, d2
+        rts
+#endif /* L_divsi3 */
+
+
+
+
 
         .text
         .proc
@@ -551,6 +525,8 @@ ___umodsi3:
         subl    d0, d1          /* d1 = a - (a/b)*b */
         movel   d1, d0
         rts
+
+.endif
 
 _LVOFindTask 	= -0x126
 _LVOOpenLibrary = -0x228
