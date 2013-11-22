@@ -2,15 +2,16 @@ NEEDATEXIT	= 0		| make it 1 to enable the atexit function/logic
 FLUSHONCR 	= 1		| 1--Flush stdout if last char is '\n', 0--Disable
 CHECKCTRLC 	= 1		| 1--Enable ctrl-c check on bflush, 0--Disable
 
+BUFFERSIZE	= 4096	| buffer used only for stdout
+MPIB		=  512	| Internal buffer for rawdofmt, lives on stack
+
 			.macro SYS function
-				jsr	(_LVO\function).W(a6)
+			jsr	(_LVO\function).W(a6)
 			.endm
 
 			.text
 			.even
 			.globl  mystart
-			|.globl  _mysprintf
-			|.globl  _myprintf
 mystart:
 			move.l	d0,d2
 			move.l	a0,a2
@@ -21,7 +22,7 @@ mystart:
 			move.l	d0,a5		| a5 will hold this Task/Process
 			move.l	d0,a4		| a4 copy to reach stderr
 			lea.l	_dosname,a1
-			moveq	#33,d0
+			moveq	#33,d0		| 33 is for dos >=kickstart1.2
 			SYS		OpenLibrary
 			move.l	d0,_DOSBase
 			jeq		.nodos
@@ -64,15 +65,6 @@ larg0:		move.b	1.W(a4),(a4)+	| shift bytes left...(covering leading len)
 			|
 
 
-BUFFERSIZE	= 4096
-MPIB		=  512	| Internal buffer for rawdofmt, lives on stack
-
-_LVOAllocMem 	=  -0xc6
-_LVOFreeMem  	=  -0xd2
-_LVORawDoFmt 	=   -522
-_LVOOutput 		=  -0x3c
-_LVOWrite 		=  -0x30
-_LVOSetSignal 	= -0x132
 
 /*
 _mysprintf:
@@ -158,7 +150,7 @@ buffIndex:	.long 0
 fpindex: 	.long 0
 	        .text
 	        .even
-
+.lcomm 		staticbuff,80
 .lcomm 		_buffer,BUFFERSIZE+MPIB
 
 
@@ -335,7 +327,7 @@ _realmalloc:
 			move.l  _SysBase,a6
 	        SYS		AllocMem		|AllocMem(size + 4, 0L)
 			tst.l	d0				|Got it?
-		 	beq.s	1f
+		 	jbeq	1f
 			movea.l	d0,a6			|Copy pointer
 			move.l	d2,(a6)+		|Stash size in first 4 bytes
 			move.l	a6,d0			|return final pointer in d0
@@ -365,6 +357,11 @@ _realfree:
         .endm
 
 
+/*
+** We only need math routines on 68000
+** So, on the 68000 eclipse configuration we pass --defsym needmath=1 on the assembler
+** On 68020+ it's not defined (in eclipse), so they don't get assembled.
+*/
 .ifdef needmath
         .text
         .proc
@@ -528,6 +525,13 @@ ___umodsi3:
 
 .endif
 
+
+_LVOAllocMem 	=  -0xc6
+_LVOFreeMem  	=  -0xd2
+_LVORawDoFmt 	=   -522
+_LVOOutput 		=  -0x3c
+_LVOWrite 		=  -0x30
+_LVOSetSignal 	= -0x132
 _LVOFindTask 	= -0x126
 _LVOOpenLibrary = -0x228
 _LVOAllocMem	= -0xc6

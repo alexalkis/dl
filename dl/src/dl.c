@@ -36,15 +36,6 @@
  */
 #define __USE_SYSBASE
 
-#include <stdarg.h>
-
-#include <exec/types.h>
-#include <exec/execbase.h>
-#include <dos/dos.h>
-#include <dos/dosextens.h>
-#include <proto/dos.h>
-#include <proto/exec.h>
-
 #include "string.h"
 #include "stdio.h"
 #include "sort.h"
@@ -111,9 +102,7 @@ extern int file_output_block_size;
 extern struct pending *pending_dirs;
 size_t tabsize = 8;
 extern struct highlight highlight_tabx13[13], *highlight_tab;
-int OSVersion;
 
-//extern APTR OldWindowPtr;
 
 struct highlight highlight_cursor = { "\x9b" " p", "\x9b" "0 p", 0 };
 int windowWidth = 77;
@@ -123,14 +112,21 @@ int gDirs, gFiles, gTotalSize, gtotal_blocks;
 int summarise = 0;
 
 extern char *arg0;
+#define THISPROC   ((struct Process *)(SysBase->ThisTask))
+#define Result2(x) THISPROC->pr_Result2 = x
 
 int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 {
-	DateStamp(&Now);
+	int OSVersion;
 	char *arg;
+
+	DateStamp(&Now);
 	GetWinBounds(&windowWidth, &windowHeight);
 	max_idx = MAX(1, windowWidth / 3); //MIN_COLUMN_WIDTH);
 	OSVersion = (SysBase->LibNode.lib_Version > 34) ? 20 : 13;
+	if (OSVersion == 13) {
+		highlight_tab = &highlight_tabx13[7];
+	}
 //	struct Process *procp = (struct Process *) FindTask(0L);
 //	OldWindowPtr = procp->pr_WindowPtr;
 //	procp->pr_WindowPtr = (APTR) -1L; /* Shutdown requesters */
@@ -142,13 +138,10 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 //		bprint(cli->cli_SetName);
 //		bprint(cli->cli_Prompt);
 //		bprint(cli->cli_CommandFile);
-	if (OSVersion == 13) {
-		highlight_tab = &highlight_tabx13[7];
-	}
+
 	gDirs = gFiles = gTotalSize = gtotal_blocks = 0;
-	printf("%s", highlight_cursor.off);
-	cliline[linelen - 1] = '\0';
-	//printf("going in..,\n");bflush();
+
+	cliline[linelen - 1] = '\0';	// eat the \n at the end
 	print_block_size = false;
 	print_inode = false;
 	print_dir_name = true;
@@ -169,6 +162,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 						DEREF_NEVER : DEREF_COMMAND_LINE_SYMLINK_TO_DIR);
 	int n_files = 0;
 	if (goon != -1) {
+		printf("%s", highlight_cursor.off);
 		cliline = &cliline[goon];
 		arg = strtok(cliline, " ");
 		if (init_structures()) {
@@ -275,13 +269,15 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 			}
 			free_structures();
 		}
+		if (summarise > 2) {
+			printf("\2331mDirs: %ld Files: %ld Blocks: %ld Bytes: %ld\2330m\n",
+					gDirs, gFiles, gtotal_blocks, gTotalSize);
+		}
+		printf("%s", highlight_cursor.on);
+		return 0;
 	}
-	if (summarise > 2) {
-		printf("\2331mDirs: %ld Files: %ld Blocks: %ld Bytes: %ld\2330m\n",
-				gDirs, gFiles, gtotal_blocks, gTotalSize);
-	}
-	printf("%s", highlight_cursor.on);
-	return 0;
+	//Result2(ERROR_BAD_TEMPLATE);
+	return 20;
 }
 
 /* Parses the command line, acts on switches
@@ -527,7 +523,6 @@ void testBreak(void)
 	if ((oldsig & SIGBREAKF_CTRL_C) != 0) {
 		bflush();
 		myerror("\2330m\233 p***BREAK\n");
-		//zapBuffer();
 		gotBreak = 1;
 	}
 }

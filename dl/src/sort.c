@@ -198,6 +198,7 @@ char *file_name_concat(char *dirname, char *name, char *dunno)
 	if (new) {
 		if (len1) {
 			memcpy(new, dirname, len1);
+			//bcopy(dirname,new,len1);
 			if (spare)
 				new[len1] = '/';
 		}
@@ -328,79 +329,10 @@ void print_current_files(void)
 	testBreak();
 }
 
-void addEntry(struct FileInfoBlock *fib)
-{
-	if (cwd_n_used == cwd_n_alloc) {
-		//myprintf("Gonna allocate %ld bytes for %ld items...\n",	cwd_n_alloc * 2 * sizeof *cwd_file,cwd_n_alloc * 2);
-		cwd_file = (struct fileinfo *) realloc(cwd_file,
-				cwd_n_alloc * 2 * sizeof *cwd_file);
-		cwd_n_alloc *= 2;
-	}
-
-	//myerror("adding %s\n",fib->fib_FileName);
-	//Remapping the fib for the highlight table to work
-	switch (fib->fib_DirEntryType) {
-	case ST_LINKFILE:
-	case ST_FILE:
-		if ((fib->fib_Protection & FIBF_SCRIPT)
-				|| (~fib->fib_Protection & FIBF_EXECUTE))
-			fib->fib_DirEntryType -= 2;
-		break;
-	case ST_ROOT:
-	case ST_USERDIR:
-	case ST_LINKDIR:
-		break;
-	case ST_SOFTLINK:
-		if ((fib->fib_Protection & FIBF_SCRIPT)
-				|| (~fib->fib_Protection & FIBF_EXECUTE))
-			fib->fib_DirEntryType = HI_SOFTLINK_EXE;
-		else
-			fib->fib_DirEntryType = HI_SOFTLINK;
-		break;
-	default:
-		if (fib->fib_DirEntryType >= 0)
-			fib->fib_DirEntryType = HI_DIR_DEFAULT;
-		else
-			fib->fib_DirEntryType = HI_FILE_DEFAULT;
-		break;
-	}
-
-	cwd_file[cwd_n_used].fib = *fib;
-	cwd_n_used++;
-
-	if (format == long_format || print_block_size) {
-		char buf[LONGEST_HUMAN_READABLE + 1];
-		int len = strlen(
-				human_readable(fib->fib_NumBlocks, buf, human_output_opts,
-				ST_NBLOCKSIZE, output_block_size));
-		if (block_size_width < len) {
-			block_size_width = len;
-			//myerror("\nnew len: %ld (%ld) \"%s\"\n", len, fib->fib_NumBlocks, buf);
-			//if (format==long_format) myerror("long_format\n");
-			//if (print_block_size) myerror("print_block_size\n");
-		}
-		if (format == long_format) {
-			len = strlen(
-					human_readable(fib->fib_Size, buf, file_human_output_opts,
-							1, file_output_block_size));
-			if (file_size_width < len)
-				file_size_width = len;
-		}
-
-	}
-
-	if (print_inode) {
-		char buf[16];
-		int len = strlen(umaxtostr(fib->fib_DiskKey, buf));
-		//myerror("len=%ld, width=%ld\n",len,inode_number_width);
-		if (inode_number_width < len)
-			inode_number_width = len;
-		//myerror("len=%ld, width=%ld\n",len,inode_number_width);
-	}
-}
 
 /* Returns pointer just past the '.' of the string when there is a . in string
- * Returns pointer to empty string (points to the \0 at the end) when the is no .
+ * Returns pointer to empty string (points to the \0 at the end) when the is no
+ * extension at all.
  */
 char *extindex(char *str)
 {
@@ -875,6 +807,78 @@ int stat(char *file, struct fileinfo *f)
 	return ret;
 }
 
+void addEntry(struct FileInfoBlock *fib)
+{
+	if (cwd_n_used == cwd_n_alloc) {
+		//myprintf("Gonna allocate %ld bytes for %ld items...\n",	cwd_n_alloc * 2 * sizeof *cwd_file,cwd_n_alloc * 2);
+		cwd_file = (struct fileinfo *) realloc(cwd_file,
+				cwd_n_alloc * 2 * sizeof *cwd_file);
+		cwd_n_alloc *= 2;
+	}
+
+	//myerror("adding %s\n",fib->fib_FileName);
+	//Remapping the fib for the highlight table to work
+	switch (fib->fib_DirEntryType) {
+	case ST_LINKFILE:
+	case ST_FILE:
+		if ((fib->fib_Protection & FIBF_SCRIPT)
+				|| (~fib->fib_Protection & FIBF_EXECUTE))
+			fib->fib_DirEntryType -= 2;
+		break;
+	case ST_ROOT:
+	case ST_USERDIR:
+	case ST_LINKDIR:
+		break;
+	case ST_SOFTLINK:
+		if ((fib->fib_Protection & FIBF_SCRIPT)
+				|| (~fib->fib_Protection & FIBF_EXECUTE))
+			fib->fib_DirEntryType = HI_SOFTLINK_EXE;
+		else
+			fib->fib_DirEntryType = HI_SOFTLINK;
+		break;
+	default:
+		if (fib->fib_DirEntryType >= 0)
+			fib->fib_DirEntryType = HI_DIR_DEFAULT;
+		else
+			fib->fib_DirEntryType = HI_FILE_DEFAULT;
+		break;
+	}
+
+	cwd_file[cwd_n_used].fib = *fib;
+	cwd_n_used++;
+
+	if (format == long_format || print_block_size) {
+		char buf[LONGEST_HUMAN_READABLE + 1];
+		int len = strlen(
+				human_readable(fib->fib_NumBlocks, buf, human_output_opts,
+				ST_NBLOCKSIZE, output_block_size));
+		if (block_size_width < len) {
+			block_size_width = len;
+			//myerror("\nnew len: %ld (%ld) \"%s\"\n", len, fib->fib_NumBlocks, buf);
+			//if (format==long_format) myerror("long_format\n");
+			//if (print_block_size) myerror("print_block_size\n");
+		}
+		if (format == long_format) {
+			len = strlen(
+					human_readable(fib->fib_Size, buf, file_human_output_opts,
+							1, file_output_block_size));
+			if (file_size_width < len)
+				file_size_width = len;
+		}
+
+	}
+
+	if (print_inode) {
+		char buf[16];
+		int len = strlen(umaxtostr(fib->fib_DiskKey, buf));
+		//myerror("len=%ld, width=%ld\n",len,inode_number_width);
+		if (inode_number_width < len)
+			inode_number_width = len;
+		//myerror("len=%ld, width=%ld\n",len,inode_number_width);
+	}
+}
+
+
 int gobble_file(char const *name, enum filetype type, long inode,
 		bool command_line_arg, char const *dirname)
 {
@@ -888,6 +892,7 @@ int gobble_file(char const *name, enum filetype type, long inode,
 	//printf("gobble_file: %s\n",name);
 	f = &cwd_file[cwd_n_used];
 	memset(f, '\0', sizeof *f);
+	//setmem(f, sizeof *f, '\0');
 	f->fib.fib_DiskKey = inode;
 	f->fib.fib_DirEntryType = type;
 	if (command_line_arg || format_needs_stat) {
@@ -896,19 +901,24 @@ int gobble_file(char const *name, enum filetype type, long inode,
 		bool do_deref;
 		int err;
 
-		if (name[0] == '/' || dirname[0] == 0) {
-			absolute_name = (char *) name;
-		} else {
-			ff = absolute_name = mymalloc(strlen(name) + strlen(dirname) + 2);
-			attach(absolute_name, dirname, name);
-		}
+		//myerror("name: %s dirname: %s\n",name,dirname);
+		//TODO: is the following if needed at all?
+//		if (/*name[0] == '/' ||*/ dirname[0] == 0) {
+//			absolute_name = (char *) name;
+//		} else {
+//			ff = absolute_name = mymalloc(strlen(name) + strlen(dirname) + 2);
+//			attach(absolute_name, dirname, name);
+//		}
+		absolute_name=name;
 		switch (dereference) {
 		case DEREF_ALWAYS:
+			//myerror("Defer always\n");
 			err = stat(absolute_name, f);
 			do_deref = true;
 			break;
 		case DEREF_COMMAND_LINE_ARGUMENTS:
 		case DEREF_COMMAND_LINE_SYMLINK_TO_DIR:
+			//myerror("Command line\n");
 			if (command_line_arg) {
 				bool need_lstat;
 				err = stat(absolute_name, f);
@@ -929,7 +939,7 @@ int gobble_file(char const *name, enum filetype type, long inode,
 			}
 
 		default: /* DEREF_NEVER */
-
+			//myerror("Default\n");
 			err = stat(absolute_name, f);
 			if (*absolute_name)
 				strcpy(f->fib.fib_FileName, absolute_name);

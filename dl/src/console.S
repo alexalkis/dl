@@ -250,8 +250,6 @@ gwbdone:
 	movem.l	(sp)+,d2-d4/a2/a6
 	unlk	a5
 	rts
-alkis:
-	bra		gwbupdate
 
 SetConsoleType:
 	movem.l	a2/a3/a5/a6,-(sp)

@@ -36,11 +36,6 @@ char *strdup(const char *str)
 #ifndef FULLBCOPY
 //void bcopy(const void *s1, void *s2, size_t n)
 //{
-//	 /*static int c=0;
-//	 static int t=0;
-//	 ++c;
-//	 t+=n;
-//	 myerror("--%ld--   %ld %ld\n",n,c,t);*/
 //		while (n--)
 //			*((char *) s2)++ = *((char *) s1)++;
 //
@@ -168,7 +163,7 @@ char *strtok(char *s, const char *delim)
 	return (tok);
 }
 
-int myindex(char *str, char c)
+int myindex(const char *str, const char c)
 {
 	int i;
 	for (i = 0; str[i]; ++i)
@@ -176,7 +171,7 @@ int myindex(char *str, char c)
 			return i;
 	return -1;
 }
-int strcmp(char *str1, char *str2)
+int strcmp(const char *str1, const char *str2)
 {
 	while (*str1 == *str2 && *str2) {
 		++str1;
@@ -196,7 +191,7 @@ int strncmp(const char *s1, const char *s2, int n)
 	return r;
 }
 
-int stricmp(char *str1, char *str2)
+int stricmp(const char *str1, const char *str2)
 {
 	UBYTE c1, c2;
 

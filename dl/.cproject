@@ -30,7 +30,7 @@
 							<tool command="m68k-amigaos-gcc" id="cdt.managedbuild.tool.gnu.cross.c.compiler.1385982546" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler">
 								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.option.optimization.level.2146616864" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" value="gnu.c.optimization.level.size" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.debugging.level.150539069" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" value="gnu.c.debugging.level.default" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.misc.other.1271125926" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -fomit-frame-pointer -vno-builtin" valueType="string"/>
+								<option id="gnu.c.compiler.option.misc.other.1271125926" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -fomit-frame-pointer " valueType="string"/>
 								<option id="gnu.c.compiler.option.misc.verbose.79446639" name="Verbose (-v)" superClass="gnu.c.compiler.option.misc.verbose" value="false" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.warnings.extrawarn.1755130420" name="Extra warnings (-Wextra)" superClass="gnu.c.compiler.option.warnings.extrawarn" value="true" valueType="boolean"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.2110501513" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
@@ -61,7 +61,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1673783418" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver"/>
 							<tool command="m68k-amigaos-as" id="cdt.managedbuild.tool.gnu.cross.assembler.1608552104" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler">
-								<option id="gnu.both.asm.option.flags.1680284996" superClass="gnu.both.asm.option.flags" value="--defsym needmath=1" valueType="string"/>
+								<option id="gnu.both.asm.option.flags.1680284996" name="Assembler flags" superClass="gnu.both.asm.option.flags" value="--defsym needmath=1" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.532919436" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -72,7 +72,7 @@
 							<option id="cdt.managedbuild.option.gnu.cross.path.1280784005.73458894" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path.1280784005"/>
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.targetPlatform.gnu.cross" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.1495125022" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler.1385982546">
-								<option id="gnu.c.compiler.option.misc.other.1993659434" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -fomit-frame-pointer -vno-builtin" valueType="string"/>
+								<option id="gnu.c.compiler.option.misc.other.1993659434" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -fomit-frame-pointer " valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1216964743" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.956456354" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1222357861"/>

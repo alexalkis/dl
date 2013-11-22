@@ -23,17 +23,17 @@ void bflush(void);
 #define ToLower(c) (IsUpper((uch) c) ? (unsigned) c | 0x20 : (unsigned) c)
 
 
-void bcopy(const void *s1,void *s2,size_t n);
+void __stdargs bcopy(const void *s1,void *s2,size_t n);
 void bzero(char *dest, int n);
 void setmem(char *buf, int n, char c);
 char *strtok(char *s, const char *delim);
-int myindex(char *str, char c);
-int strcmp(char *str1, char *str2);
+int myindex(const char *str, const char c);
+int strcmp(const char *str1, const char *str2);
 int strncmp(const char *s1, const char *s2, int n);
-int stricmp(char *str1, char *str2);
+int stricmp(const char *str1, const char *str2);
 char *strcpy(char *dst, const char *src);
 char *strdup(const char *str);
-void bcopy(const void *src, void *dest, size_t n);
+
 //void *memcpy(void *dst, void *src, size_t size);
 char *realloc(char *orig, int newsize);
 
