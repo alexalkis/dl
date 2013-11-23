@@ -504,7 +504,10 @@ void dir(struct pending *pend)
 					++nDirs;
 					fib.fib_Size = 0; ///kludge to fix the 'sorting by size' issue
 				}
-				addEntry(&fib);
+				enum filetype type = unknown;
+				//addEntry(&fib);
+				remapFib(&fib);
+				gobble_file (fib.fib_FileName, type,fib.fib_NumBlocks,false, (char *)&fib);
 			}
 		}
 	} else {

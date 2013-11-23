@@ -128,6 +128,7 @@ int init_structures(void);
 void clear_files(void);
 void free_structures(void);
 void sort_files(void);
+void remapFib(struct FileInfoBlock *fib);
 int gobble_file(char const *name, enum filetype type, long inode,
 		bool command_line_arg, char const *dirname);
 void extract_dirs_from_files(char const *dirname, bool command_line_arg);
