@@ -756,6 +756,6 @@ human_readable(int n, char *buf, int opts, int from_block_size,
 	}
 
 	*psuffix = '\0';
-
+	//myerror("'%s'\n",p);
 	return p;
 }

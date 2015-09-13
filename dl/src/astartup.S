@@ -1,11 +1,17 @@
 NEEDATEXIT	= 0		| make it 1 to enable the atexit function/logic
+NEEDSTDIN	= 0
 FLUSHONCR 	= 1		| 1--Flush stdout if last char is '\n', 0--Disable
 CHECKCTRLC 	= 1		| 1--Enable ctrl-c check on bflush, 0--Disable
 
 BUFFERSIZE	= 4096	| buffer used only for stdout
 MPIB		=  512	| Internal buffer for rawdofmt, lives on stack
 
-			.macro SYS function
+
+
+			.macro SYS function loadFrom
+			.ifnc	"\loadFrom",""
+			move.l	\loadFrom,a6
+			.endif
 			jsr	(_LVO\function).W(a6)
 			.endm
 
@@ -13,6 +19,9 @@ MPIB		=  512	| Internal buffer for rawdofmt, lives on stack
 			.even
 			.globl  mystart
 mystart:
+|Much faster method to "find" your code is to have instruction like clr.w $100 before the code you need to debug
+| and use memwatch point to break when $100 is accessed (for example "w 0 100 2")
+			|clr.w	0x100
 			move.l	d0,d2
 			move.l	a0,a2
 			move.l	0x04.w,a6
@@ -31,8 +40,10 @@ mystart:
 			move.l	#-1,pr_WindowPtr.W(a5)
 			SYS		Output
 			move.l	d0,_stdout
+			.ifgt NEEDSTDIN
 			SYS		Input
 			move.l	d0,_stdin
+			.endif
 			move.l	pr_CLI.W(a4),a4
 			adda.l	a4,a4				| normal pointer = 4 * BPTR
 			adda.l	a4,a4
@@ -50,6 +61,7 @@ larg0:		move.b	1.W(a4),(a4)+	| shift bytes left...(covering leading len)
 
 			move.l	d2,d0	|restore cmd line arguments, len at d0
 			move.l	a2,a0	| actual argument (as one string) in a0
+			clr.w	0x100
 			jsr 	_dl		| call main program
 			movel	d0,d2	| preserve return value
 			move.l	OldWindowPtr,pr_WindowPtr.W(a5)
@@ -58,9 +70,10 @@ larg0:		move.b	1.W(a4),(a4)+	| shift bytes left...(covering leading len)
 			jbsr	callexits
 			.endif
 			movel	d2,d0	| restore return value to d0, where OS expects it
-			rts
-.nodos:		moveq	#20,d0
-			rts
+.nodos:		rts
+|.nodos:		moveq	#20,d0
+|			rts
+
 			| although I don't CloseLibrary the dos.library, seems that there is no memory leak
 			|
 
@@ -139,7 +152,9 @@ stuffChar:
 _SysBase:	.long 0
 _DOSBase:	.long 0
 _stdout:	.long 0
-_stdin:	.long 0
+.ifgt NEEDSTDIN
+_stdin:		.long 0
+.endif
 _stderr:	.long 0
 _arg0:		.long 0
 _gotBreak:	.long 0
@@ -155,7 +170,8 @@ fpindex: 	.long 0
 
 
 			.globl	_write
-_write:	move.l	8(sp),d1
+_write:		clr.w	0x100
+			move.l	8(sp),d1
 			move.l	4(sp),a0
 			move.l	buffIndex,d0
 			add.w	d1,d0

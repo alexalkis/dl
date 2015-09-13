@@ -54,7 +54,7 @@ char *getDirectory(char *text);
 void testBreak(void);
 int parseSwitches(char *filedir);
 
-#define VERSION_STRING "1.1"
+#define VERSION_STRING "1.2"
 BYTE version[] = "\0$VER: dl " VERSION_STRING " (" __DATE__ ")";
 
 extern struct DosLibrary *DOSBase;
@@ -70,7 +70,7 @@ enum TIMEDATEMODE {
 };
 int gSort = SORT_FILENAME;
 
-int gReverse = 0;
+bool gReverse = 0;
 
 int gTimeDateFormat = TIMEDATE_NORMAL;
 
@@ -100,16 +100,20 @@ extern int file_human_output_opts;
 extern int file_output_block_size;
 
 extern struct pending *pending_dirs;
-size_t tabsize = 8;
+short tabsize = 8;
 extern struct highlight highlight_tabx13[13], *highlight_tab;
 
 
 struct highlight highlight_cursor = { "\x9b" " p", "\x9b" "0 p", 0 };
 int windowWidth = 77;
 int windowHeight = 30;
-int nDirs, nFiles, nTotalSize, ntotal_blocks;
-int gDirs, gFiles, gTotalSize, gtotal_blocks;
-int summarise = 0;
+
+int nDirs, nFiles;
+int gDirs, gFiles;
+
+int nTotalSize, ntotal_blocks;
+int gTotalSize, gtotal_blocks;
+short summarise = 0;
 
 extern char *arg0;
 #define THISPROC   ((struct Process *)(SysBase->ThisTask))
@@ -545,9 +549,8 @@ char *dates(char *s, struct DateStamp *dss)
 
 	while (day >= 365) {
 		if ((year & 3) == 0 && ((year % 25) != 0 || (year & 15) == 0))
-			day -= 366;
-		else
-			day -= 365;
+			day -= 1;
+		day -= 365;
 		++year;
 	}
 	if ((year & 3) == 0 && ((year % 25) != 0 || (year & 15) == 0))

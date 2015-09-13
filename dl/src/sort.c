@@ -96,7 +96,7 @@ struct highlight highlight_tabx13[13] = {
 /*  3 LABEL        */{ "\x9b" "33m", "\x9b" "0m", 0 },
 /*  4 LINKDIR      */{ "\x9b" "33m", "\x9b" "0m", 0 },
 /*  5 DIR_DEFAULT  */{ "", "", 0 }, };
-extern int gReverse;
+extern bool gReverse;
 extern int gSort;
 extern int gotBreak;
 
@@ -124,14 +124,15 @@ int init_structures(void)
 	return 0;
 }
 
+
 void clear_files(void)
 {
-	size_t i;
+	//size_t i;
 
-	for (i = 0; i < cwd_n_used; i++) {
-		struct fileinfo *f = sorted_file[i];
-		free_ent(f);
-	}
+//	for (i = 0; i < cwd_n_used; i++) {
+//		struct fileinfo *f = sorted_file[i];
+//		free_ent(f);
+//	}
 	cwd_n_used = 0;
 	inode_number_width = 0;
 	block_size_width = 0;
@@ -243,8 +244,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 				queue_directory(name, 0, command_line_arg);
 				myfree(name);
 			}
-			if (f->fib.fib_DirEntryType == arg_directory)
-				free_ent(f);
+			//if (f->fib.fib_DirEntryType == arg_directory) free_ent(f);
 		}
 	}
 
@@ -260,10 +260,10 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 	//printf("j=%ld\n",j);
 }
 
-void free_ent(struct fileinfo *f)
-{
-
-}
+//void free_ent(struct fileinfo *f)
+//{
+//
+//}
 void queue_directory(char const *name, char const *realname,
 		bool command_line_arg)
 {
@@ -300,7 +300,7 @@ void free_plist(struct plist *list)
 
 void print_current_files(void)
 {
-	int i;
+	size_t i;
 
 	switch (format) {
 	case one_per_line:
@@ -470,6 +470,7 @@ void print_with_commas(void)
 	size_t filesno;
 	size_t pos = 0;
 
+	//myerror("linelenght: %ld\n",line_length);
 	for (filesno = 0; filesno < cwd_n_used; filesno++) {
 		struct fileinfo const *f = sorted_file[filesno];
 		size_t len = length_of_file_name_and_frills(f);
@@ -631,13 +632,13 @@ size_t length_of_file_name_and_frills(const struct fileinfo *f)
 	char buf[LONGEST_HUMAN_READABLE + 1];
 
 	if (print_inode)
-		len += 1
+		len += 0
 				+ (format == with_commas ?
 						strlen(umaxtostr(f->fib.fib_DiskKey, buf)) :
 						inode_number_width);
 
 	if (print_block_size)
-		len += 1
+		len += 0
 				+ (format == with_commas ?
 						strlen(
 								human_readable(ST_NBLOCKS(f->fib.fib_NumBlocks),
@@ -931,7 +932,7 @@ int gobble_file(char const *name, enum filetype type, long inode,
 		f->fib.fib_DirEntryType = type;
 		if (command_line_arg || format_needs_stat) {
 			/* Absolute name of this file.  */
-			char *absolute_name, *ff = NULL;
+			char const *absolute_name, *ff = NULL;
 			bool do_deref;
 			int err;
 
