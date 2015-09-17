@@ -45,6 +45,8 @@ int realstrlen(const char *str,char *f, char *s,int line);
 int __regargs strlen(const char *str);
 #endif
 
+//#define USEMALLOC
+
 //#define DEBUGMEMORY
 #ifdef DEBUGMEMORY
 char *dmalloc(int n,char *f, char *s,int line);
@@ -52,7 +54,18 @@ void dfree(char *mem,char *f,char *s,int line);
 #define mymalloc(x) dmalloc((x),__FUNCTION__,__FILE__,__LINE__)
 #define myfree(x) 	dfree((x),__FUNCTION__,__FILE__,__LINE__)
 #else
+#ifdef USEMALLOC
+
+void __initmalloc(void);
+void __exitmalloc(void);
+void free(void *ptr);
+void *malloc(size_t size);
+
+#define mymalloc(x) malloc((x))
+#define myfree(x)	 free((x))
+#else
 #define mymalloc(x) realmalloc((x))
 #define myfree(x)	 realfree((x))
+#endif
 #endif
 #endif /* STRING_H_ */

@@ -123,6 +123,11 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 {
 	int OSVersion;
 	char *arg;
+	int ret;
+
+#ifdef USEMALLOC
+	__initmalloc();
+#endif
 
 	DateStamp(&Now);
 	GetWinBounds(&windowWidth, &windowHeight);
@@ -278,10 +283,14 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 					gDirs, gFiles, gtotal_blocks, gTotalSize);
 		}
 		printf("%s", highlight_cursor.on);
-		return 0;
+		ret=0;
 	}
 	//Result2(ERROR_BAD_TEMPLATE);
-	return 20;
+	ret=20;
+#ifdef USEMALLOC
+	__exitmalloc();
+#endif
+	return ret;
 }
 
 /* Parses the command line, acts on switches
