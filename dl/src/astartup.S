@@ -1,6 +1,6 @@
 NEEDATEXIT	= 0		| make it 1 to enable the atexit function/logic
 NEEDSTDIN	= 0
-FLUSHONCR 	= 1		| 1--Flush stdout if last char is '\n', 0--Disable
+FLUSHONCR 	= 0		| 1--Flush stdout if last char is '\n', 0--Disable
 CHECKCTRLC 	= 1		| 1--Enable ctrl-c check on bflush, 0--Disable
 
 BUFFERSIZE	= 4096	| buffer used only for stdout
@@ -295,9 +295,14 @@ _putchar:
 			addql	#1,d0
 			move.l	d0,buffIndex
 			cmpl	#BUFFERSIZE,d0
+
+			.ifgt FLUSHONCR
 			jeq		.flushit
 			cmp.b	#'\n',d1
 			jne		.putcok
+			.else
+			jne		.putcok
+			.endif
 .flushit:	jbsr	_bflush
 .putcok:	rts
 

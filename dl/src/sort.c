@@ -101,7 +101,7 @@ extern int gSort;
 extern int gotBreak;
 
 char *dates(char *s, struct DateStamp *dss);
-void testBreak(void);
+// void testBreak(void);
 void shellSort(struct fileinfo **a, int n);
 void quicksort_iterative(struct fileinfo **array, unsigned len);
 void print_many_per_line(void);
@@ -267,6 +267,7 @@ void extract_dirs_from_files(char const *dirname, bool command_line_arg)
 void queue_directory(char const *name, char const *realname,
 		bool command_line_arg)
 {
+	//printf("What the...\n");
 	struct pending *new = (struct pending *) mymalloc(sizeof *new);
 	if (new) {
 		new->realname = realname ? strdup(realname) : NULL;
@@ -326,7 +327,7 @@ void print_current_files(void)
 		}
 		break;
 	}
-	testBreak();
+	// testBreak();
 }
 
 /* Returns pointer just past the '.' of the string when there is a . in string

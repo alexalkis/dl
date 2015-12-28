@@ -37,6 +37,10 @@
 
 #define MATH_BUFSIZE	32
 
+//used to skip error checking
+#define NOERROR
+
+
 int fwrite(const void *vbuf, size_t elmsize, size_t elms, BPTR fi);
 int _pfmtone(char c, va_list *pva,
 		unsigned int (*func)(char *, size_t, size_t, void *), void *desc,
@@ -405,11 +409,14 @@ int _pfmtone(char c, va_list *pva,
  */
 static int vfwrite(const void *vbuf, size_t elmsize, size_t elms, BPTR fi)
 {
-	if (elmsize == 1) {
+	//static int count=0;
+	//myerror("%ld elmsize: %ld elms: %ld '%s'\n",++count,elmsize,elms,vbuf);
+
+	//if (elmsize == 1) {
 		write(vbuf, elms);
-	} else {
-		write(vbuf, (short) ((short) elmsize * (short) elms));
-	}
+	//} else {
+	//	write(vbuf, (short) ((short) elmsize * (short) elms));
+	//}
 }
 
 int printf(const char *ctl, ...)

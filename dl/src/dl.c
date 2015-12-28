@@ -51,7 +51,7 @@ void dir(struct pending *pend);
 
 int containsWildchar(char *text);
 char *getDirectory(char *text);
-void testBreak(void);
+// void testBreak(void);
 int parseSwitches(char *filedir);
 
 #define VERSION_STRING "1.2"
@@ -190,7 +190,7 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 						gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true,
 								"");
 				}
-				testBreak();
+				// testBreak();
 				++n_files;
 			} while ((arg = strtok(NULL, " ")) && !gotBreak);
 			if (!gotBreak) {
@@ -284,9 +284,14 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 		}
 		printf("%s", highlight_cursor.on);
 		ret=0;
-	}
+	} else {
 	//Result2(ERROR_BAD_TEMPLATE);
 	ret=20;
+	}
+	if (gotBreak) {
+		bflush();
+		myerror("\2330m\233 p***BREAK\n");
+	}
 #ifdef USEMALLOC
 	__exitmalloc();
 #endif
@@ -506,7 +511,7 @@ void dir(struct pending *pend)
 			pend->realname = strdup(fib.fib_FileName);
 		}
 		while (ExNext(lock, &fib) && !gotBreak) {
-			testBreak();
+			// testBreak();
 			if ((fpattern_match(file, fib.fib_FileName) || noPattern)
 					&& !gotBreak) {
 				ntotal_blocks += numBlocks(fib.fib_Size);
@@ -533,15 +538,16 @@ void dir(struct pending *pend)
 		extract_dirs_from_files(dir, false);
 }
 
-void testBreak(void)
-{
-	ULONG oldsig = SetSignal(0L, (LONG)SIGBREAKF_CTRL_C);
-	if ((oldsig & SIGBREAKF_CTRL_C) != 0) {
-		bflush();
-		myerror("\2330m\233 p***BREAK\n");
-		gotBreak = 1;
-	}
-}
+
+//void testBreak(void)
+//{
+//	ULONG oldsig = SetSignal(0L, (LONG)SIGBREAKF_CTRL_C);
+//	if ((oldsig & SIGBREAKF_CTRL_C) != 0) {
+//		bflush();
+//		myerror("\2330m\233 p***BREAK\n");
+//		gotBreak = 1;
+//	}
+//}
 
 char *dates(char *s, struct DateStamp *dss)
 {
@@ -640,8 +646,9 @@ int containsWildchar(char *text)
 	FPAT_CLOS,
 	FPAT_SET_L,
 	FPAT_SET_R,
-	FPAT_SET_NOT,
-	FPAT_SET_THRU };
+	FPAT_SET_NOT
+	//,FPAT_SET_THRU
+	};
 	int i;
 	for (i = 0; patternchars[i]; ++i)
 		if (myindex(text, patternchars[i]) != -1)

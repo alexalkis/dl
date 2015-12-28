@@ -19,7 +19,7 @@ typedef short int bool;
 #define MIN(a,b)	((a>b)?b:a)
 #define MAX(a,b)	((a>b)?a:b)
 #define LOOP_DETECT (!!active_dir_set)
-#define DIRED_PUTCHAR(c) do {bprintf("%lc",((c))); ++dired_pos;} while (0)
+//#define DIRED_PUTCHAR(c) do {bprintf("%lc",((c))); ++dired_pos;} while (0)
 
 enum DISPMODE {
 	DISPLAY_NORMAL = 0, DISPLAY_HORIZONTAL, DISPLAY_LONG,
@@ -77,6 +77,13 @@ extern enum format format;
 extern enum sort_type sort_type;
 extern LONG errno;
 
+
+//TODO: Since filename is max 30 (says in the dos.h) and the space we have in
+//	the structure is 108, we could utilise the [60+] position to copy the filename
+//	in lowercase.  See, with 10.000 files, the stricmp is called 170.000 times
+//	(17 times the array size) when the sorting is going on. Now each time
+//	stricmp is called, it needs to do two tolower() conversions.  We can
+//	eliminate those conversions and just call strcmp on the lowercased strings.
 struct fileinfo {
 	struct FileInfoBlock fib;
 };
