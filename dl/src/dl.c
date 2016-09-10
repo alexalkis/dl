@@ -33,7 +33,7 @@
  dir 74232 ( 74 bpe)  	2.65s
  ls 323096 (323 bpe)  	1.88s
  list					7.38s
- */
+*/
 #define __USE_SYSBASE
 
 #include "string.h"
@@ -430,7 +430,7 @@ int parseSwitches(char *filedir)
 					break;
 				default:
 					myerror("%s: invalid option '%lc'\n", arg0, *f);
-					gotBreak = 1;
+					//gotBreak = 1;
 					return -1;
 				}
 				++f;

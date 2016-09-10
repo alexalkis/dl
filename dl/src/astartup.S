@@ -283,7 +283,6 @@ _bcopy:	moveal	4(sp),a1
 
 
 | void putchar(char c)
-| - has hardcoded the flush on '\n'
 			.text
         	.proc
         	.globl  _putchar
