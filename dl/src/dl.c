@@ -178,17 +178,16 @@ int dl(register char *cliline __asm("a0"), register int linelen __asm("d0"))
 			//int seenMany = 0;
 			do {
 				if (!strlen(arg) || !strcmp(arg, "\"\"")) {
-					if (immediate_dirs)
-						gobble_file("", directory, NOT_AN_INODE_NUMBER, true,
-								"");
-					else
+					if (immediate_dirs) {
+						gobble_file("", directory, NOT_AN_INODE_NUMBER, true,"");
+					} else {
 						queue_directory("", NULL, true);
+					}
 				} else {
 					if (containsWildchar(arg))
 						queue_directory(arg, NULL, true);
 					else
-						gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true,
-								"");
+						gobble_file(arg, unknown, NOT_AN_INODE_NUMBER, true,"");
 				}
 				// testBreak();
 				++n_files;
